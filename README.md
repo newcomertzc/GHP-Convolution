@@ -27,9 +27,9 @@ python train_classification.py --backbone ResNet --backbone-func resnet50 --prep
 ```
 
 ## Required libraries
-Python 3.8.12  
-Pytorch 1.8.2  
-Torchvision 0.9.2  
-Numpy 1.20.3  
-OpenCV-Python 4.5.5.64  
-matplotlib, tqdm, timm, scikit-learn, ptflops
+`Python 3.8.12`  
+`Pytorch 1.8.2`  
+`Torchvision 0.9.2`  
+`Numpy 1.20.3`  
+`OpenCV-Python 4.5.5.64`  
+`Matplotlib, Scikit-learn, tqdm, timm, ptflops`
