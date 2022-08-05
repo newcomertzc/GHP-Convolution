@@ -2,7 +2,7 @@ import math
 import numpy as np
 import cv2 as cv
 
-from ..common_types import *
+from ...common_types import *
 
 
 __all__ = [

@@ -1,5 +1,7 @@
 import torch
 import pickle
+import numpy as np
+import cv2 as cv
 import torch.nn as nn
 import torch.optim as torch_optim
 
@@ -27,6 +29,7 @@ from core.transforms import *
 
 def main(args):
     set_seed(args.seed)
+    keep_dir_valid(args.save_dir)
     use_deterministic_algorithms(args.use_deterministic_algorithms)
     device = torch.device(args.device)
     print(args)
@@ -135,6 +138,12 @@ def main(args):
         metric_keeper.add_metric('val_loss_dict', {})
         metric_keeper.add_metric('train_cmatrix_dict', {})
         metric_keeper.add_metric('val_cmatrix_dict', {})
+        
+    if args.test_only:
+        print('***' * 12)
+        print('start evaluating: ')
+        evaluate(model, criterion, dataloader_val, device, -1, num_classes, metric_keeper)
+        return
     
     print('***' * 12)
     print('start training: ')
@@ -415,7 +424,7 @@ def get_args_parser(add_help=True):
 
     parser.add_argument('--data-path', default='dataset/imagenet-train-40c-50ipc/', type=str, help='training set path')
     parser.add_argument('--data-val-path', default='dataset/imagenet-val-10800/', type=str, help='validation set path')
-    parser.add_argument('--data-stat', default='stat/imagenet_stat.pkl', type=str, help='dataset compression statistics')
+    parser.add_argument('--data-stat', default='statistics/imagenet_statistics.pkl', type=str, help='dataset compression statistics')
     parser.add_argument(
         '-i', '--input-type', default='green', type=str, help='"green", "gray" or "rgb"'
     )

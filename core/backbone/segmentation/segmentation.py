@@ -3,9 +3,9 @@ import torch.nn as nn
 from torchvision.models.segmentation.fcn import FCNHead
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
-from . import *
-from ..base import BaseFCN_VGG, BaseSegNetwork
-from ..common_types import *
+from ..backbone import *
+from ...base import BaseFCN_VGG, BaseSegNetwork
+from ...common_types import *
 
 
 __all__ = [

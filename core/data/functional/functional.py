@@ -6,10 +6,10 @@ from PIL import Image
 from tqdm import tqdm
 from pycocotools.coco import COCO
 
-from . import *
-from ..utils import *
-from ..common_types import *
-from ..transforms import ToRGB, Remain
+from ..data import *
+from ...utils import *
+from ...common_types import *
+from ...transforms import ToRGB, Remain
 
 
 __all__ = [
