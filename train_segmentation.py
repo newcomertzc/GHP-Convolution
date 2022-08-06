@@ -4,23 +4,22 @@ import cv2 as cv
 import torch.nn as nn
 import torch.optim as torch_optim
 
-from glob import glob
 from tqdm import tqdm
+from pycocotools.coco import COCO
 from sklearn import metrics as sklearn_metrics
-from torchvision import models as torchvision_models
 
 from core import IMDNetwork
 from core import backbone
 from core import preprocessing
-from core import convnext
-from core import bayarcnn
 from core import optim
 from core.base import *
-from core.data import ClfDataset
-from core.data.functional import get_clf_dataloader
+from core.data import SegDataset
+from core.data.functional import get_seg_dataloader_coco, collate_fn_seg
 from core.common_types import *
 from core.utils import *
 from core.transforms import *
+
+from library import models
 
 
 def main(args):
@@ -33,84 +32,66 @@ def main(args):
     # get transform
     quality_values, quality_probs, subsampling_probs = get_JPEG_stat(args.data_stat)
     toJPEG = RandomJPEGCompress(quality_values, quality_probs, subsampling_probs)
-    valid_input_type = {'green', 'gray', 'green'}
-    if args.input_type not in valid_input_type:
-        raise ValueError(f"Invalid input_type {args.input_type}. Only \"green\", \"gray\" and"
-                         f"\"rgb\" are supported.")
-    else:
-        input_transform = get_input_transform(args.input_type)
-    if args.patches_per_image == 1:
-        toPatches = RandomPatch(args.patch_size, args.patch_stride)
-    else:
-        toPatches = RandomNPatches(args.patch_size, args.patch_stride, args.patches_per_image)
-    transform, after_transform = get_default_transform(input_transform, toPatches, toJPEG)
+    input_type = get_base_name(args.pretrained).split('_')[1]
+    input_transform = get_input_transform(input_type)
+    
+    toPatches = AllPatches(args.patch_size, args.patch_stride)
+    pre_transform, transform, after_transform = get_default_transform(
+        input_transform, toPatches, toJPEG)
     transform_val = Compose([PILToArray(), after_transform])
     
     # get dataset and dataloader
-    paths = sorted(glob(path_join(args.data_path, '*')))
     dataloader = FunctionExecutor(
-        func=get_clf_dataloader,
-        kwargs={
-            'paths': paths,
+        func = get_seg_dataloader_coco,
+        kwargs = {
+            'coco': COCO(args.coco_ann_path),
+            'image_dir': args.coco_path,
+            'pre_transform': pre_transform,
             'transform': transform,
             'after_transform': after_transform,
             'batch_size': args.batch_size,
-            'single_patch': (args.patches_per_image == 1),
+            'single_patch': False,
             'shuffle': True
         }
     )
-    dataset_val = ClfDataset(args.data_val_path, transform_val)
-    dataloader_val = DataLoader(dataset_val, args.batch_size)
+    dataset_val = SegDataset(args.data_val_path, transform_val, PILToArray())
+    dataloader_val = DataLoader(dataset_val, args.batch_size, collate_fn_seg)
     
     # get model
-    in_channels = 1 if args.input_type != 'rgb' else 3
+    in_channels = 1 if input_type != 'rgb' else 3
     num_classes = 10 # TODO customize num_classes
-    model_func = get_model_func(args.backbone_func)
+    pretrained = torch.load(args.pretrained, 'cpu')
+    kwargs = pretrained['kwargs']
     
-    if 'BayarCNN' in args.backbone:
-        if args.input_type == 'rgb':
-            raise ValueError(f"BayarCNN expect an input with 1 channels, but got input_type = {args.input_type} "
-                             f"which means 3 channels.")
+    backbone_kwargs = {
+        'in_channels': kwargs['backbone_kwargs']['in_channels'],
+        'num_classes': kwargs['backbone_kwargs']['num_classes'],
+        'backbone_kwargs': {
+            'model_func': kwargs['backbone_kwargs']['model_func'],
+        },
+    }
+    if 'ResNet' in args.backbone:
+        backbone_kwargs['replace_stride_with_dilation'] = args.replace_stride_with_dilation
+    
+    model = IMDNetwork.build_with_kwargs(
+        backbone_func = backbone.segmentation.__dict__[args.backbone],
+        backbone_kwargs = backbone_kwargs,
+        preprocessing_func = kwargs['preprocessing_func'],
+        preprocessing_kwargs = kwargs['preprocessing_kwargs']
+    )
         
-        model = IMDNetwork.build_with_kwargs(
-            backbone_func = bayarcnn.__dict__[args.backbone],
-            backbone_kwargs = {
-                'num_classes': num_classes
-            }
-        )
-    else:
-        if args.preproc is None:
-            model = IMDNetwork.build_with_kwargs(
-                backbone_func = backbone.__dict__[args.backbone],
-                backbone_kwargs = {
-                    'in_channels': in_channels,
-                    'num_classes': num_classes,
-                    'model_func': model_func
-                }
-            )
-        else:
-            preprocessing_kwargs = {
-                'in_channels': in_channels,
-                'out_channels': args.preproc_width,
-            }
-            if 'GHP' in args.preproc:
-                preprocessing_kwargs['penalty'] = args.preproc_reg
-            
-            model = IMDNetwork.build_with_kwargs(
-                backbone_func = backbone.__dict__[args.backbone],
-                backbone_kwargs = {
-                    'in_channels': args.preproc_width,
-                    'num_classes': num_classes,
-                    'model_func': model_func
-                },
-                preprocessing_func = preprocessing.__dict__[args.preproc],
-                preprocessing_kwargs = preprocessing_kwargs
-            )
-    
     print('***' * 12)
     print(f"name: {model.name}")
     if args.show_model:
         show_model(model, (in_channels, args.patch_size, args.patch_size))
+        
+    if kwargs['preprocessing_func'] is not preprocessing.PreprocIdentity:  
+        model.preprocessing.load_state_dict(
+            extract_weights(pretrained['model'], desired_layer_name='preprocessing.', target_layer_name=''))
+        freeze_weights(model.preprocessing)
+    model.backbone.load_backbone_weights(pretrained['model'])
+    model.backbone.freeze_backbone_weights()
+        
     model.to(device)
     
     # get optimizer and loss function
@@ -131,14 +112,15 @@ def main(args):
     # load checkpoint    
     if args.checkpoint:
         print('load checkpoint...')
-        start_epoch = load_checkpoint(model, optimizer, metric_keeper, args.checkpoint)
+        start_epoch = load_checkpoint(model, optimizer, metric_keeper, args.checkpoint, device)
     else:
         start_epoch = 1
         metric_keeper.add_metric('loss_dict', {})
         metric_keeper.add_metric('val_loss_dict', {})
         metric_keeper.add_metric('train_cmatrix_dict', {})
         metric_keeper.add_metric('val_cmatrix_dict', {})
-        
+    
+    # only test
     if args.test_only:
         print('***' * 12)
         print('start evaluating: ')
@@ -159,9 +141,10 @@ def main(args):
             evaluate(model, criterion, dataloader_val, device, epoch, num_classes, metric_keeper)
             
             checkpoint_name = (
-                f"{model.name}_{args.input_type}_epoch_{epoch:03d}_"
-                f"valAcc_{calc_accuracy(metric_keeper.val_cmatrix) * 100:05.2f}_"
-                f"valLoss_{metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1]:.4f}.pt")
+                f"{model.name}_{args.input_type}_{get_dir_name(args.data_path).replace('_', '-')}_"
+                f"{args.patches_per_image}ppi_epoch_{epoch:03d}_"
+                f"loss_{metric_keeper.loss_dict[epoch]:.4f}_"
+                f"val-loss_{metric_keeper.val_loss_dict[epoch]:.4f}.pt")
             save_checkpoint(model, optimizer, epoch, metric_keeper, args.save_dir, checkpoint_name)
             
             metric_keeper.reset_metric('running_val_loss')
@@ -177,48 +160,49 @@ def get_opt_class(opt: str) -> Optimizer:
     return opt_classes[opt]
 
 
-def get_model_func(model_func: str) -> Callable:
-    model_funcs = {}
-    model_funcs.update(torchvision_models.__dict__)
-    model_funcs.update(backbone.__dict__)
-    model_funcs.update(convnext.__dict__)
+def get_model(model: str) -> Callable:
+    models = {}
+    models.update(backbone.segmentation.__dict__)
     
-    return model_funcs[model_func]
+    return models[model]
 
 
 def get_default_transform(input_transform: tuple, toPatches: Callable, toJPEG: Callable) -> tuple:
     input_convert, input_normalize = input_transform
     
-    transform = Compose([
+    pre_transform = Compose([
         RGBAToRGB(),
         RandomTransform([
-            Compose([toPatches]),
             Compose([
                 RandomTransform([
                     RandomResize_discrete(interpolation=cv.INTER_NEAREST),
-                    RandomRotate_discrete(interpolation=cv.INTER_NEAREST),
-                ]), toJPEG, toPatches,
+                    RandomRotate_discrete(interpolation=cv.INTER_NEAREST),]), 
+                toJPEG,
             ]),
             Compose([
                 RandomTransform([
                     RandomResize_discrete(interpolation=cv.INTER_LINEAR),
-                    RandomRotate_discrete(interpolation=cv.INTER_LINEAR),
-                ]), toJPEG, toPatches,
+                    RandomRotate_discrete(interpolation=cv.INTER_LINEAR),]), 
+                toJPEG,
             ]),
             Compose([
                 RandomTransform([
                     RandomResize_discrete(interpolation=cv.INTER_CUBIC),
-                    RandomRotate_discrete(interpolation=cv.INTER_CUBIC),
-                ]), toJPEG, toPatches,
+                    RandomRotate_discrete(interpolation=cv.INTER_CUBIC),]), 
+                toJPEG, 
             ]),
-            Compose([RandomMedianFilter(), toJPEG, toPatches]),
-            Compose([RandomBoxFilter(), toJPEG, toPatches]),
-            Compose([RandomGaussianFilter_discrete(), toJPEG, toPatches]),
-            Compose([RandomAWGN_discrete(), toJPEG, toPatches]),
-            Compose([PoissonNoise(), toJPEG, toPatches]),
-            Compose([RandomImpulseNoise_discrete(), toJPEG, toPatches]),
+            Compose([RandomMedianFilter(), toJPEG]),
+            Compose([RandomBoxFilter(), toJPEG]),
+            Compose([RandomGaussianFilter_discrete(), toJPEG]),
+            Compose([RandomAWGN_discrete(), toJPEG]),
+            Compose([PoissonNoise(), toJPEG]),
+            Compose([RandomImpulseNoise_discrete(), toJPEG]),
         ],
             return_label=True),
+    ])
+    transform = Compose([
+        toPatches,
+        SelectPatches(),
     ])
     after_transform = Compose([
         input_convert,
@@ -226,8 +210,8 @@ def get_default_transform(input_transform: tuple, toPatches: Callable, toJPEG: C
         ToTensor(),
         input_normalize])
     
-    return transform, after_transform
-
+    return pre_transform, transform, after_transform
+    
     
 def train_one_epoch(
     model: BaseModule, 
@@ -249,18 +233,22 @@ def train_one_epoch(
     
     dataloader = dataloader.execute()
     for iter_num, data in tqdm(enumerate(dataloader)):
-        inputs, labels = data
+        inputs, labels = data['image'], data['mask']
         inputs = inputs.to(input_dtype).to(device)
         labels = labels.to(label_dtype).to(device)
         
         optimizer.zero_grad()
-        out = model(inputs)
+        res = model(inputs)
+        
+        out, aux = res.get('out'), res.get('aux')
         if num_classes == 1:
-            out = out.squeeze(dim=-1)
+            out = out.squeeze(dim=1)
+            aux = aux.squeeze(dim=1) if aux is not None else aux
         loss = criterion(out, labels)
+        aux_loss = criterion(aux, labels) if aux is not None else 0.0
         
         reg_loss = model.calc_reg_loss()
-        (loss + reg_loss).backward()
+        (loss + aux_loss + reg_loss).backward()
         
         optimizer.step()
         metric_keeper.running_loss[0] += loss.item()
@@ -272,18 +260,20 @@ def train_one_epoch(
         else:
             y_pred = predict_multiclass(out)
         cmatrix = sklearn_metrics.confusion_matrix(
-            y_true, y_pred, labels=np.arange(cmatrix_shape))
+            y_true.ravel(), y_pred.ravel(), labels=np.arange(cmatrix_shape))
         metric_keeper.train_cmatrix += cmatrix
         
         if (iter_num + 1) % print_freq == 0:
             print(header + 
                   f" lr: {optimizer.param_groups[0]['lr']} "
-                  f" acc: {calc_accuracy(metric_keeper.train_cmatrix) * 100:05.2f} "
+                  f" acc: {calc_accuracy(metric_keeper.train_cmatrix)*100:05.2f} "
+                  f" mIoU: {calc_mIoU(metric_keeper.train_cmatrix)*100:05.2f} "
                   f" loss: {metric_keeper.running_loss[0] / metric_keeper.running_loss[1]:.4f} ", end='')
-            if reg_loss != 0:
-                print(f" reg loss: {reg_loss:.4f} ")
-            else:
-                print()
+            # if reg_loss != 0:
+            #     print(f" reg loss: {reg_loss:.4f} ")
+            # else:
+            #     print()
+            print()
                 
     metric_keeper.loss_dict[epoch] = metric_keeper.running_loss[0] / metric_keeper.running_loss[1]
     metric_keeper.train_cmatrix_dict[epoch] = metric_keeper.train_cmatrix
@@ -308,11 +298,13 @@ def evaluate(
     
     with torch.no_grad():
         for data in tqdm(dataloader):
-            inputs, labels = data
+            inputs, labels = data['image'], data['mask']
             inputs = inputs.to(input_dtype).to(device)
             labels = labels.to(label_dtype).to(device)
             
-            out = model(inputs)
+            res = model(inputs)
+            
+            out = res.get('out')
             if num_classes == 1:
                 out = out.squeeze(dim=-1)
             loss = criterion(out, labels)
@@ -326,13 +318,14 @@ def evaluate(
             else:
                 y_pred = predict_multiclass(out)
             metric_keeper.val_cmatrix += sklearn_metrics.confusion_matrix(
-                y_true, y_pred, labels=np.arange(cmatrix_shape))
+                y_true.ravel(), y_pred.ravel(), labels=np.arange(cmatrix_shape))
                 
     metric_keeper.val_loss_dict[epoch] = (
         metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1])
     metric_keeper.val_cmatrix_dict[epoch] = metric_keeper.val_cmatrix
-    print(f" acc: {calc_accuracy(metric_keeper.val_cmatrix) * 100:05.2f} "
-          f" loss: {metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1]:.4f} ")
+    print(f" acc: {calc_accuracy(metric_keeper.val_cmatrix)*100:05.2f} "
+          f" mIoU: {calc_mIoU(metric_keeper.val_cmatrix)*100:05.2f} "
+          f" loss: {metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1]:.4f}")
             
 
 def save_checkpoint(
@@ -363,14 +356,15 @@ def load_checkpoint(
     model: BaseModule, 
     optimizer: Optimizer, 
     metric_keeper: MetricKeeper,
-    checkpoint: str
+    checkpoint: str,
+    device: torch.device
 ) -> int:
     """Load checkpoint.
 
     Returns:
         int: start_epoch
     """
-    checkpoint = torch.load(checkpoint, 'cpu')
+    checkpoint = torch.load(checkpoint, device)
     print_inconsistent_kwargs(model.kwargs, checkpoint['kwargs'])
     
     start_epoch = checkpoint['epoch'] + 1
@@ -388,30 +382,35 @@ def load_checkpoint(
 def get_args_parser(add_help=True):
     import argparse
 
-    parser = argparse.ArgumentParser(description='IMD Classification Training', add_help=add_help)
+    parser = argparse.ArgumentParser(description='IMD Segmentation Training', add_help=add_help)
 
-    parser.add_argument('--data-path', default='dataset/imagenet-train-40c-50ipc/', type=str, help='training set path')
-    parser.add_argument('--data-val-path', default='dataset/imagenet-val-10800/', type=str, help='validation set path')
+    parser.add_argument('--coco-path', default='dataset/coco/train2017/', type=str, help='COCO training set path')
+    parser.add_argument('--coco-ann-path', default='dataset/coco/annotations/instances_train2017.json', type=str, help='COCO annotation file path')
+    parser.add_argument('--data-val-path', default='dataset/coco-val-seg/', type=str, help='validation set path')
     parser.add_argument('--data-stat', default='statistics/imagenet_statistics.pkl', type=str, help='path of dataset compression statistics file')
-    parser.add_argument(
-        '-i', '--input-type', default='green', type=str, help='"green", "gray" or "rgb"'
-    )
-    parser.add_argument('--patches-per-image', default=4, type=int, help='maximum number of patches per image')
+    # parser.add_argument(
+    #     '-i', '--input-type', default='green', type=str, help='"green", "gray" or "rgb"'
+    # )
     parser.add_argument('--patch-size', default=224, type=int, help='patch size')
     parser.add_argument('--patch-stride', default=160, type=int, help='(maximum) patch stride')
     # parser.add_argument(
     #     '-n', '--num-classes', default=10, type=int, help='total number of classes'
     # )
-    parser.add_argument('--backbone', default='ResNet', type=str, help='name of backbone network')
-    parser.add_argument('--backbone-func', default='resnet50', type=str, help='name of backbone function')
-    parser.add_argument('--preproc', default=None, type=str, help='name of preprocessing module (Default: None)')
-    parser.add_argument('--preproc-width', default=12, type=int, help='output channels of preprocessing module')
-    parser.add_argument('--preproc-reg', default='L1', type=str, help='"L1" or "L2"')
+    
+    parser.add_argument('--backbone', default='DeepLabV3_ResNet', type=str, help='name of backbone network (Default: DeepLabV3_ResNet)')
+    parser.add_argument('--pretrained', default=None, type=str, help='path of pretrained checkpoint')
+    parser.add_argument(
+        '--replace-stride-with-dilation', 
+        default=[False, True, True], 
+        type=str_to_bool, 
+        nargs='+', 
+        help='Adjust the dilation of ResNet. (Default: [False, True, True])'
+    )
     parser.add_argument('--device', default='cuda', type=str, help='device (Use cuda or cpu, Default: cuda)')
     parser.add_argument(
         '-b', '--batch-size', default=32, type=int, help='images per batch'
     )
-    parser.add_argument('--epochs', default=800, type=int, metavar='N', help='number of total epochs to run')
+    parser.add_argument('--epochs', default=10, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--opt', default='RAdam', type=str, help='optimizer')
     parser.add_argument('--lr', default=1e-4, type=float, help='learning rate')
     # parser.add_argument(
@@ -419,7 +418,7 @@ def get_args_parser(add_help=True):
     # )
     parser.add_argument('--show-model', action='store_true', help='Show model information.')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
-    parser.add_argument('--save-freq', default=20, type=int, help='save frequency')
+    parser.add_argument('--save-freq', default=1, type=int, help='save frequency')
     parser.add_argument('--save-dir', default='saved_models/', type=str, help='path to save checkpoint')
     parser.add_argument('--checkpoint', default=None, type=str, help='path of the checkpoint to load')
     # parser.add_argument(

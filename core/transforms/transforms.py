@@ -853,8 +853,8 @@ class RandomNPatches:
 
 class AllPatches:
     def __init__(self, patch_size, max_stride):
-        self.patch_size = patch_size
-        self.max_stride = max_stride
+        self.patch_size = _pair(patch_size)
+        self.max_stride = _pair(max_stride)
 
     def __call__(self, x):
         if x is None:

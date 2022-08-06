@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from torchvision import models as torchvision_models
 
-from .utils import capitalize_name
+from .utils import capitalize_name, extract_weights, freeze_weights
 from .common_types import *
 
 
@@ -33,6 +33,21 @@ class NormModule(BaseModule):
         super(NormModule, self).__init__()
         
 
+class AssembleModule(BaseModule):
+    desired_layer_name = 'backbone'
+    target_layer_name = 'backbone'
+    
+    def load_backbone_weights(self, weights: OrderedDict, print_result: bool = True) -> None:
+        weights = extract_weights(weights, self.desired_layer_name, self.target_layer_name)
+        result = self.load_state_dict(weights, strict=False)
+        if print_result: 
+            print("load pretrained backbone:")
+            print(result)
+
+    def freeze_backbone_weights(self, freeze: bool = True):
+        freeze_weights(getattr(self, self.target_layer_name), freeze)
+
+
 class InheritModule(BaseModule):
     def __init__(
         self, 
@@ -47,6 +62,7 @@ class InheritModule(BaseModule):
         model = self.customize_model(
             num_classes, in_channels, model_func, model_kwargs)
         self.name = capitalize_name(model_func.__name__)
+        self.name = self.name.replace('_', '-')
         self.copy_vars(vars(model))
         
     def customize_model(
@@ -114,7 +130,9 @@ class BaseBayarCNN(BaseModule):
         return x
 
 
-class BaseFCN_VGG(BaseModule):
+class BaseFCN_VGG(AssembleModule):
+    desired_layer_name = 'backbone.features'
+    
     def __init__(
         self, 
         num_classes: int,
@@ -136,14 +154,22 @@ class BaseFCN_VGG(BaseModule):
             nn.Conv2d(4096, num_classes, 1)
         )
         self.name = f"FCN-{backbone.name}"
+        self.pool_index = self.get_pool_index(backbone)
         
     def forward(self, x: Tensor) -> Tensor:
         """Should be overridden by all subclasses.
         """
         raise NotImplementedError
+    
+    def get_pool_index(self, model: torchvision_models.vgg):
+        pool_index = []
+        for index, layer in enumerate(model.features):
+            if isinstance(layer, nn.MaxPool2d):
+                pool_index.append(index)
+        return pool_index
 
 
-class BaseSegNetwork(BaseModule):
+class BaseSegNetwork(AssembleModule):
     def __init__(
         self, 
         num_classes: int,
@@ -186,7 +212,7 @@ class BaseSegNetwork(BaseModule):
 
         return result
         
-    def analyse_model(self, model: BaseModule) -> tuple:
+    def analyse_model(self, model: Module) -> tuple:
         """Should be overridden by all subclasses.
         """
         raise NotImplementedError

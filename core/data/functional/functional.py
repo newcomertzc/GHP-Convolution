@@ -174,7 +174,7 @@ def get_seg_dataloader(
             batch_image_out = torch.stack(batch_image[:batch_size])
             batch_label_out = torch.LongTensor(batch_label[:batch_size])
 
-            yield batch_image_out, batch_label_out
+            yield {'image': batch_image_out, 'mask': batch_label_out}
             del batch_image_out, batch_label_out
             
             batch_image = batch_image[batch_size:]
@@ -184,7 +184,7 @@ def get_seg_dataloader(
         batch_image = torch.stack(batch_image)
         batch_label = torch.LongTensor(batch_label)
 
-        yield batch_image, batch_label
+        yield {'image': batch_image, 'mask': batch_label}
 
 
 
@@ -296,7 +296,7 @@ def get_seg_dataloader_coco(
             batch_image_out = torch.stack(batch_image[:batch_size])
             batch_label_out = torch.LongTensor(batch_label[:batch_size])
 
-            yield batch_image_out, batch_label_out
+            yield {'image': batch_image_out, 'mask': batch_label_out}
             del batch_image_out, batch_label_out
             
             batch_image = batch_image[batch_size:]
@@ -306,7 +306,7 @@ def get_seg_dataloader_coco(
         batch_image = torch.stack(batch_image)
         batch_label = torch.LongTensor(batch_label)
 
-        yield batch_image, batch_label        
+        yield {'image': batch_image, 'mask': batch_label}        
         
 
 def get_seg_dataset_file_coco(

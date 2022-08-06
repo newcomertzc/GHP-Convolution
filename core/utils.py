@@ -7,15 +7,16 @@ import torch
 import torch.nn.functional as F
 
 from copy import deepcopy
+from ptflops import get_model_complexity_info
 
 from .common_types import *
 
 
 __all__ = [
-    'capitalize_name', 'keep_dir_valid', 'get_dir_name', 'get_base_name', 'path_join',
-    'set_seed', 'use_deterministic_algorithms', 'zero_pad', 'random_zero_pad', 'calc_accuracy', 'calc_mIoU',
-    'label_smooth', 'one_hot', 'predict_multiclass', 'predict_binary', 'LabelSmoothingCrossEntropyLoss', 
-    'FunctionExecutor', 'MetricKeeper'
+    'capitalize_name', 'keep_dir_valid', 'get_dir_name', 'get_base_name', 'path_join', 'str_to_bool', 'zero_pad', 'random_zero_pad', 
+    'set_seed', 'use_deterministic_algorithms', 'extract_weights', 'freeze_weights', 'label_smooth', 'one_hot', 
+    'predict_multiclass', 'predict_binary', 'calc_accuracy', 'calc_mIoU', 'multiclass_to_binary', 'show_model', 'print_inconsistent_kwargs',
+    'get_JPEG_stat', 'LabelSmoothingCrossEntropyLoss', 'FunctionExecutor', 'MetricKeeper'
 ]
 
 
@@ -26,11 +27,16 @@ special_words = {
 }
 
 
+def str_to_bool(s) -> bool:
+    if s == '0' or s == 'False':
+        return False
+    return True
+
+
 def capitalize_name(name: str) -> str:
-    name = name.lower()
+    name = name.capitalize()
     for key, val in special_words.items():
         name = name.replace(key, val)
-    name = name.capitalize()
     return name
 
 
@@ -43,6 +49,44 @@ def set_seed(seed: int) -> None:
 def use_deterministic_algorithms(use: bool) -> None:
     torch.backends.cudnn.benchmark = not use
     torch.backends.cudnn.deterministic = use
+    
+
+def extract_weights(
+    weights: OrderedDict, 
+    desired_layer_name: Optional[str] = None, 
+    target_layer_name: Optional[str] = None
+) -> OrderedDict:
+    """Extract the weights of desired layer (and modify its name).
+    """
+    weights = weights.copy()
+    if desired_layer_name is None:
+        for name in list(weights.keys()): # avoid OrderedDict mutating during iteration
+            new_name = target_layer_name + '.' + name
+            weights[new_name] = weights.pop(name)
+    else:
+        for name in list(weights.keys()):
+            if desired_layer_name in name:
+                if target_layer_name is not None:
+                    new_name = name.replace(desired_layer_name, target_layer_name)
+                    weights[new_name] = weights.pop(name)
+            else:
+                del weights[name]
+            
+    return weights
+
+
+def freeze_weights(
+    model: Module, 
+    freeze: bool = True,
+    layer_name: Optional[str] = None
+) -> None:
+    if layer_name is None:
+        for param in model.parameters():
+            param.requires_grad = not freeze
+    else:
+        for name, param in model.named_parameters():
+            if layer_name in name:
+                param.requires_grad = not freeze
 
 
 def keep_dir_valid(path: str) -> None:
@@ -182,7 +226,65 @@ def multiclass_to_binary(output: Tensor) -> Tensor:
     output[:, 1] = output[:, 1:].max(dim=1).values
     output = output[:, :2]
     return output
+    
 
+def calc_accuracy(cmatrix: ndarray) -> float:
+    num_classes = cmatrix.shape[0]
+    
+    t = np.sum([cmatrix[class_idx, class_idx] 
+             for class_idx in range(num_classes)])
+    total = np.sum(cmatrix)
+    
+    return t / total
+
+
+def calc_mIoU(cmatrix: ndarray) -> float:
+    num_classes = cmatrix.shape[0]
+    
+    IoUs = []
+    for class_idx in range(num_classes):
+        Inter = cmatrix[class_idx, class_idx]
+        Union = sum(cmatrix[class_idx, :]) + sum(cmatrix[:, class_idx]) - Inter
+        IoU = Inter / Union
+        IoUs.append(IoU)
+    
+    return np.mean(IoUs)
+
+
+def show_model(model: Module, input_size: tuple) -> None:
+    macs, params = get_model_complexity_info(model, input_size, print_per_layer_stat=False)
+    print(f"architecture:\n{model}")
+    print(f"complexity: {macs} | params: {params}")
+    
+
+def get_JPEG_stat(stat_path: str) -> tuple:
+    with open(stat_path, 'rb') as f:
+        stat = pickle.load(f)
+    
+    quality = dict(Counter(stat['quality']).most_common(30))
+    if -1 in quality:
+        del quality[-1]
+    quality_values, quality_probs = list(quality.keys()), list(quality.values())
+    
+    subsampling = Counter(stat['subsampling'])
+    subsampling_probs = [subsampling[key] for key in ['4:4:4', '4:2:2', '4:2:0']]
+    
+    return quality_values, quality_probs, subsampling_probs
+            
+
+def print_inconsistent_kwargs(kwargs_cur: dict, kwargs_prev: dict, is_root: bool = True) -> None:
+    if kwargs_prev != kwargs_cur:
+        if is_root:
+            print('found inconsistent kwargs:')
+        for key, value in kwargs_prev.items():
+            new_value = kwargs_cur[key]
+            
+            if isinstance(value, dict):
+                print_inconsistent_kwargs(value, new_value, is_root = False)
+            else:
+                if value != new_value:
+                    print(f" {key}: {value} -> {new_value}")
+                
 
 class LabelSmoothingCrossEntropyLoss(Module):
     def __init__(self, label_smoothing: float = 0.1) -> None:
@@ -214,29 +316,6 @@ class FunctionExecutor:
         
     def execute(self) -> Any:
         return self.func(**self.kwargs)
-    
-
-def calc_accuracy(cmatrix):
-    num_classes = cmatrix.shape[0]
-    
-    t = np.sum([cmatrix[class_idx, class_idx] 
-             for class_idx in range(num_classes)])
-    total = np.sum(cmatrix)
-    
-    return t / total
-
-
-def calc_mIoU(cmatrix):
-    num_classes = cmatrix.shape[0]
-    
-    IoUs = []
-    for class_idx in range(num_classes):
-        Inter = cmatrix[class_idx, class_idx]
-        Union = sum(cmatrix[class_idx, :]) + sum(cmatrix[:, class_idx]) - Inter
-        IoU = Inter / Union
-        IoUs.append(IoU)
-    
-    return np.mean(IoUs)
     
 
 class MetricKeeper:
