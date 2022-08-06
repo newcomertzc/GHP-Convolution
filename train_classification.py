@@ -138,7 +138,8 @@ def main(args):
         metric_keeper.add_metric('val_loss_dict', {})
         metric_keeper.add_metric('train_cmatrix_dict', {})
         metric_keeper.add_metric('val_cmatrix_dict', {})
-        
+    
+    # only test
     if args.test_only:
         print('***' * 12)
         print('start evaluating: ')
