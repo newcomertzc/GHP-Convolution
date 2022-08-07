@@ -19,8 +19,6 @@ from core.common_types import *
 from core.utils import *
 from core.transforms import *
 
-from library import models
-
 
 def main(args):
     set_seed(args.seed)
@@ -85,11 +83,12 @@ def main(args):
     if args.show_model:
         show_model(model, (in_channels, args.patch_size, args.patch_size))
         
-    if kwargs['preprocessing_func'] is not preprocessing.PreprocIdentity:  
-        model.preprocessing.load_state_dict(
-            extract_weights(pretrained['model'], desired_layer_name='preprocessing.', target_layer_name=''))
+    if kwargs['preprocessing_func'] is not preprocessing.PreprocIdentity:
+        print('load pretrained preprocessing:')
+        print(' ' + str(model.preprocessing.load_state_dict(
+            extract_weights(pretrained['model'], desired_layer_name='preprocessing.', target_layer_name=''))))
         freeze_weights(model.preprocessing)
-    model.backbone.load_backbone_weights(pretrained['model'])
+    model.backbone.load_backbone_weights(pretrained['model'], print_result=True)
     model.backbone.freeze_backbone_weights()
         
     model.to(device)
@@ -141,10 +140,9 @@ def main(args):
             evaluate(model, criterion, dataloader_val, device, epoch, num_classes, metric_keeper)
             
             checkpoint_name = (
-                f"{model.name}_{args.input_type}_{get_dir_name(args.data_path).replace('_', '-')}_"
-                f"{args.patches_per_image}ppi_epoch_{epoch:03d}_"
-                f"loss_{metric_keeper.loss_dict[epoch]:.4f}_"
-                f"val-loss_{metric_keeper.val_loss_dict[epoch]:.4f}.pt")
+                f"{model.name}_{input_type}_epoch_{epoch:03d}_"
+                f"valMIoU_{calc_mIoU(metric_keeper.val_cmatrix) * 100:05.2f}_"
+                f"valLoss_{metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1]:.4f}.pt")
             save_checkpoint(model, optimizer, epoch, metric_keeper, args.save_dir, checkpoint_name)
             
             metric_keeper.reset_metric('running_val_loss')
@@ -247,8 +245,9 @@ def train_one_epoch(
         loss = criterion(out, labels)
         aux_loss = criterion(aux, labels) if aux is not None else 0.0
         
-        reg_loss = model.calc_reg_loss()
-        (loss + aux_loss + reg_loss).backward()
+        # reg_loss = model.calc_reg_loss()
+        # (loss + aux_loss + reg_loss).backward()
+        (loss + aux_loss).backward()
         
         optimizer.step()
         metric_keeper.running_loss[0] += loss.item()
@@ -266,14 +265,13 @@ def train_one_epoch(
         if (iter_num + 1) % print_freq == 0:
             print(header + 
                   f" lr: {optimizer.param_groups[0]['lr']} "
-                  f" acc: {calc_accuracy(metric_keeper.train_cmatrix)*100:05.2f} "
+                #   f" acc: {calc_accuracy(metric_keeper.train_cmatrix)*100:05.2f} "
                   f" mIoU: {calc_mIoU(metric_keeper.train_cmatrix)*100:05.2f} "
                   f" loss: {metric_keeper.running_loss[0] / metric_keeper.running_loss[1]:.4f} ", end='')
-            # if reg_loss != 0:
-            #     print(f" reg loss: {reg_loss:.4f} ")
-            # else:
-            #     print()
-            print()
+            if aux_loss != 0:
+                print(f" aux loss: {aux_loss:.4f} ")
+            else:
+                print()
                 
     metric_keeper.loss_dict[epoch] = metric_keeper.running_loss[0] / metric_keeper.running_loss[1]
     metric_keeper.train_cmatrix_dict[epoch] = metric_keeper.train_cmatrix
@@ -323,7 +321,7 @@ def evaluate(
     metric_keeper.val_loss_dict[epoch] = (
         metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1])
     metric_keeper.val_cmatrix_dict[epoch] = metric_keeper.val_cmatrix
-    print(f" acc: {calc_accuracy(metric_keeper.val_cmatrix)*100:05.2f} "
+    print(# f" acc: {calc_accuracy(metric_keeper.val_cmatrix)*100:05.2f} "
           f" mIoU: {calc_mIoU(metric_keeper.val_cmatrix)*100:05.2f} "
           f" loss: {metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1]:.4f}")
             
@@ -369,7 +367,8 @@ def load_checkpoint(
     
     start_epoch = checkpoint['epoch'] + 1
     model.load_state_dict(checkpoint['model'])
-    optimizer.load_state_dict(checkpoint['optimizer'])
+    if checkpoint['optimizer'] is not None:
+        optimizer.load_state_dict(checkpoint['optimizer'])
     
     metric_keeper.add_metric('loss_dict', checkpoint['loss'])
     metric_keeper.add_metric('val_loss_dict', checkpoint['val_loss'])

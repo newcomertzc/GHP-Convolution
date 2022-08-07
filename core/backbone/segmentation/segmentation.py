@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from torchvision import models as torchvision_models
+from copy import deepcopy
 from torchvision.models.segmentation.fcn import FCNHead
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
@@ -66,7 +66,7 @@ class FCN_VGG_16s(BaseFCN_VGG):
             self.upsample_x16 = nn.UpsamplingBilinear2d()
         else:
             self.upsample_x16 = nn.UpsamplingBilinear2d(scale_factor=16)
-        self.name += '16s'
+        self.name += '-16s'
         self.classifier_pool4 = nn.Conv2d(512, num_classes, 1)
         
     def forward(self, x: Tensor) -> Tensor:
@@ -115,7 +115,7 @@ class FCN_VGG_8s(BaseFCN_VGG):
             self.upsample_x8 = nn.UpsamplingBilinear2d()
         else:
             self.upsample_x8 = nn.UpsamplingBilinear2d(scale_factor=8)
-        self.name += '8s'
+        self.name += '-8s'
         self.classifier_pool3 = nn.Conv2d(256, num_classes, 1)
         self.classifier_pool4 = nn.Conv2d(512, num_classes, 1)
         
@@ -183,7 +183,9 @@ class SegResNet(BaseSegNetwork):
                 [False, False, True]            16s
                 [False, False, False]           32s
         """
-        backbone_kwargs['replace_stride_with_dilation'] = replace_stride_with_dilation
+        backbone_kwargs = deepcopy(backbone_kwargs)
+        backbone_kwargs['model_kwargs'] = backbone_kwargs.get('model_kwargs', {})
+        backbone_kwargs['model_kwargs']['replace_stride_with_dilation'] = replace_stride_with_dilation
         super(SegResNet, self).__init__(
             num_classes, classifier_func, in_channels, 
             backbone_func, backbone_kwargs, aux_loss)
@@ -236,6 +238,6 @@ class DeepLabV3_ResNet(SegResNet):
         aux_loss: bool = False,
         replace_stride_with_dilation: Optional[List[bool]] = [False, True, True]
     ) -> None:
-        super(FCN_ResNet, self).__init__(
+        super(DeepLabV3_ResNet, self).__init__(
             num_classes, classifier_func, in_channels, 
             backbone_func, backbone_kwargs, aux_loss, replace_stride_with_dilation)

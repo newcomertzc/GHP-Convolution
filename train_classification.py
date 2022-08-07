@@ -71,12 +71,15 @@ def main(args):
         if args.input_type == 'rgb':
             raise ValueError(f"BayarCNN expect an input with 1 channels, but got input_type = {args.input_type} "
                              f"which means 3 channels.")
+        backbone_kwargs = {
+            'num_classes': num_classes
+        }
+        if 'GHP' in args.backbone:
+            backbone_kwargs['penalty'] = args.preproc_reg
         
         model = IMDNetwork.build_with_kwargs(
             backbone_func = bayarcnn.__dict__[args.backbone],
-            backbone_kwargs = {
-                'num_classes': num_classes
-            }
+            backbone_kwargs = backbone_kwargs
         )
     else:
         if args.preproc is None:
@@ -376,7 +379,8 @@ def load_checkpoint(
     
     start_epoch = checkpoint['epoch'] + 1
     model.load_state_dict(checkpoint['model'])
-    optimizer.load_state_dict(checkpoint['optimizer'])
+    if checkpoint['optimizer'] is not None:
+        optimizer.load_state_dict(checkpoint['optimizer'])
     
     metric_keeper.add_metric('loss_dict', checkpoint['loss'])
     metric_keeper.add_metric('val_loss_dict', checkpoint['val_loss'])

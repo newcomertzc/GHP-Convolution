@@ -41,8 +41,8 @@ class AssembleModule(BaseModule):
         weights = extract_weights(weights, self.desired_layer_name, self.target_layer_name)
         result = self.load_state_dict(weights, strict=False)
         if print_result: 
-            print("load pretrained backbone:")
-            print(result)
+            print('load pretrained backbone:')
+            print(' ' + str(result))
 
     def freeze_backbone_weights(self, freeze: bool = True):
         freeze_weights(getattr(self, self.target_layer_name), freeze)

@@ -18,8 +18,7 @@ class ResNet(InheritModule, torchvision_models.ResNet):
         num_classes: int,
         in_channels: int = 3,
         model_func: Callable = torchvision_models.resnet50, 
-        model_kwargs: dict = {},
-        replace_stride_with_dilation: Optional[List[bool]] = None
+        model_kwargs: dict = {}
     ) -> None:
         """ResNet (ResNeXt).
         
@@ -27,7 +26,6 @@ class ResNet(InheritModule, torchvision_models.ResNet):
             num_classes (int): Total number of classes.
             in_channels (int, optional): Number of input channels. Defaults to 3. 
         """
-        model_kwargs['replace_stride_with_dilation'] = replace_stride_with_dilation
         InheritModule.__init__(self, num_classes, in_channels, model_func, model_kwargs)
     
     def customize_model(

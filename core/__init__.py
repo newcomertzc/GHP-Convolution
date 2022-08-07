@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from .base import *
 from .common_types import *
 
@@ -14,7 +16,7 @@ class IMDNetwork(BaseModule):
         preprocessing_kwargs: dict = {},
         name: Optional[str] = None
     ) -> BaseModule:
-        kwargs = locals()
+        kwargs = deepcopy(locals())
         preprocessing = preprocessing_func(**preprocessing_kwargs)
         backbone = backbone_func(**backbone_kwargs)
         

@@ -24,6 +24,7 @@ special_words = {
     'net': 'Net',
     'next': 'NeXt',
     'vgg': 'VGG',
+    'Vgg': 'VGG',
 }
 
 
@@ -272,18 +273,18 @@ def get_JPEG_stat(stat_path: str) -> tuple:
     return quality_values, quality_probs, subsampling_probs
             
 
-def print_inconsistent_kwargs(kwargs_cur: dict, kwargs_prev: dict, is_root: bool = True) -> None:
+def print_inconsistent_kwargs(kwargs_cur: dict, kwargs_prev: dict, prefix: str = '') -> None:
     if kwargs_prev != kwargs_cur:
-        if is_root:
+        if prefix == '':
             print('found inconsistent kwargs:')
         for key, value in kwargs_prev.items():
-            new_value = kwargs_cur[key]
+            new_value = kwargs_cur.get(key)
             
-            if isinstance(value, dict):
-                print_inconsistent_kwargs(value, new_value, is_root = False)
+            if isinstance(value, dict) and new_value is not None:
+                print_inconsistent_kwargs(value, new_value, prefix = f"{key}.")
             else:
                 if value != new_value:
-                    print(f" {key}: {value} -> {new_value}")
+                    print(f" {prefix}{key}: {value} -> {new_value}")
                 
 
 class LabelSmoothingCrossEntropyLoss(Module):
