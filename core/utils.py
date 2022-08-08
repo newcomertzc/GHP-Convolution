@@ -153,22 +153,20 @@ def random_zero_pad(image, target_size):
     return new_image, (i, j)
 
 
-def label_smooth(label: Tensor, num_classes: int, alpha: float = 0.1) -> Tensor:
+def label_smooth(label: Tensor, alpha: float = 0.1) -> Tensor:
     """Label smoothing algorithm.
 
     Args:
         label (torch.Tensor): Original label.
-        num_classes (int): Total number of classes.
         alpha (float, optional): 
-            A float in [0.0, 1.0]. Specifies the amount of smoothing. Defaults to 0.1.
+            A float in [0.0, 1.0]. Specifies the smoothing factor. Defaults to 0.1.
 
     Returns:
-        torch.Tensor: Smoothed label.
+        torch.Tensor: Smooth label.
     """
-    new_label = torch.ones_like(label) * alpha / (num_classes - 1)
-    new_label[torch.where(label == 1)] = 1 - alpha
+    smooth_label = label * (1 - alpha) + alpha / 2
     
-    return new_label
+    return smooth_label
 
 
 def one_hot(targets: Tensor, num_classes: int) -> Tensor:
