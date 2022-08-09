@@ -397,7 +397,7 @@ def get_args_parser(add_help=True):
 
     parser.add_argument('--data-path', default='dataset/imagenet-train-40c-50ipc/', type=str, help='training set path')
     parser.add_argument('--data-val-path', default='dataset/imagenet-val-10800/', type=str, help='validation set path')
-    parser.add_argument('--data-stat', default='statistics/imagenet_statistics.pkl', type=str, help='path of dataset compression statistics file')
+    parser.add_argument('--data-stat', default='stat/imagenet_stat.pkl', type=str, help='path of dataset compression statistics file')
     parser.add_argument(
         '-i', '--input-type', default='green', type=str, help='"green", "gray" or "rgb"'
     )
