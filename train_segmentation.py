@@ -386,7 +386,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--coco-path', default='dataset/coco/train2017/', type=str, help='COCO training set path')
     parser.add_argument('--coco-ann-path', default='dataset/coco/annotations/instances_train2017.json', type=str, help='COCO annotation file path')
     parser.add_argument('--data-val-path', default='dataset/coco-val-seg/', type=str, help='validation set path')
-    parser.add_argument('--data-stat', default='statistics/imagenet_statistics.pkl', type=str, help='path of dataset compression statistics file')
+    parser.add_argument('--data-stat', default='stat/imagenet_stat.pkl', type=str, help='path of dataset compression statistics file')
     # parser.add_argument(
     #     '-i', '--input-type', default='green', type=str, help='"green", "gray" or "rgb"'
     # )
