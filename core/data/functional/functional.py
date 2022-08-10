@@ -122,7 +122,7 @@ def get_clf_dataset_file(
         if condition(patch):
             im = Image.fromarray(patch)
             
-            fname = get_base_name(fname)
+            fname = get_base_name(path)
             fname = (f"{imgId:07d}_{fname.replace('_', '-')}_"
                      f"{label_names[label]}.png")
             
