@@ -322,15 +322,29 @@ class MetricKeeper:
         self.defaults = {}
     
     def add_metric(self, name: str, default: Any = None) -> None:
-        self.defaults[name] = deepcopy(default)
-        setattr(self, name, default)
+        self.defaults[name] = default
+        setattr(self, name, deepcopy(default))
         
     def reset_metric(self, name: str) -> None:
-        setattr(self, name, self.defaults[name])
+        setattr(self, name, deepcopy(self.defaults[name]))
     
     def all_metrics(self) -> dict:
-        return vars(self)
+        _all_metrics = deepcopy(vars(self))
+        _all_metrics.pop('defaults')
+        
+        return _all_metrics
 
     def reset(self) -> None:
         for name, default in self.defaults.items():
             setattr(self, name, default)
+            
+    def __str__(self) -> str:
+        _str = "MetricKeeper: {\n"
+        for attr, value in self.all_metrics().items():
+            _str += f" {attr}: {value},\n"
+        _str += "}"
+        
+        return _str
+    
+    def __repr__(self) -> str:
+        return self.__str__()
