@@ -58,5 +58,6 @@ python train_segmentation.py --pretrained your_pretrained_checkpoint --backbone 
 `Torchvision == 0.9.2`  
 `Pillow == 9.0.1`  
 `Numpy == 1.20.3`  
-`OpenCV-Python == 4.5.5.64`  
-`Matplotlib, Scikit-learn, tqdm, timm, ptflops`
+`OpenCV-Python == 4.5.3.56`
+`Scikit-learn == 0.24.2`  
+`tqdm, timm, ptflops`
