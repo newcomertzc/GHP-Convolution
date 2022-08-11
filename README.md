@@ -53,9 +53,10 @@ python train_segmentation.py --pretrained your_pretrained_checkpoint --backbone 
 (For `replace-stride-with-dilation`, `0 1 1` indicates XXX-ResNet-8s, `0 0 1` indicates XXX-ResNet-16s and `0 0 0` indicates XXX-ResNet-32s.)
 
 ## 3. Required libraries
-`Python 3.8.12`  
-`Pytorch 1.8.2`  
-`Torchvision 0.9.2`  
-`Numpy 1.20.3`  
-`OpenCV-Python 4.5.5.64`  
+`Python == 3.8.12`  
+`Pytorch == 1.8.2`  
+`Torchvision == 0.9.2`
+`Pillow == 9.0.1`
+`Numpy == 1.20.3`  
+`OpenCV-Python == 4.5.5.64`  
 `Matplotlib, Scikit-learn, tqdm, timm, ptflops`
