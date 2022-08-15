@@ -423,8 +423,8 @@ def get_args_parser(add_help=True):
     #     '--label-smoothing', default=0.0, type=float, help='label smoothing (default: 0.0)', dest='label_smoothing'
     # )
     parser.add_argument('--show-model', action='store_true', help='Show model information.')
-    parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
-    parser.add_argument('--save-freq', default=20, type=int, help='save frequency')
+    parser.add_argument('--print-freq', default=10, type=int, help='print frequency (Default: 10)')
+    parser.add_argument('--save-freq', default=10, type=int, help='save frequency (Default: 10)')
     parser.add_argument('--save-dir', default='saved_models/', type=str, help='path to save checkpoint')
     parser.add_argument('--checkpoint', default=None, type=str, help='path of the checkpoint to load')
     # parser.add_argument(
