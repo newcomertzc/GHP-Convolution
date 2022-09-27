@@ -912,7 +912,7 @@ class SelectPatches:
 
 
 class RandomTransform:
-    def __init__(self, transforms, probs=None, return_label=False):
+    def __init__(self, transforms, probs=None, return_label=False, debug=False):
         if probs is None:
             probs = np.ones(len(transforms))
 
@@ -924,12 +924,16 @@ class RandomTransform:
         self.transforms = transforms
         self.probs = probs
         self.return_label = return_label
+        self.debug = debug
 
     def __call__(self, x):
         if x is None:
             return None
 
-        rand = np.random.rand() * sum(self.probs)
+        rand = np.random.rand()
+        if self.debug:
+            print(f" rand: {rand}")
+        rand *= sum(self.probs)
 
         for tid in range(len(self.transforms)):
             if rand <= sum(self.probs[:tid + 1]):
