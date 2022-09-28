@@ -83,14 +83,12 @@ def poisson_noise(image: ndarray, vals: Optional[int] = None) -> ndarray:
     temp[temp > 1.0] = 1.0
     temp[temp < 0.0] = 0.0
     
-    temp = np.array(temp * 255, dtype=np.uint8)
-    temp = temp / 255.0 if image.dtype != np.uint8 else temp
+    if image.dtype == np.uint8:
+        temp = np.array(temp * 255, dtype=np.uint8)
     return temp
 
 
 def poisson_noise_v2(image: ndarray, vals: Optional[int] = None) -> ndarray:
-    """This version is more memory-saving, but it will lead to a different random results.
-    """
     if vals is None:
         vals = len(np.unique(image))
         vals = 2 ** np.ceil(np.log2(vals))
@@ -100,7 +98,8 @@ def poisson_noise_v2(image: ndarray, vals: Optional[int] = None) -> ndarray:
     temp[temp > 1.0] = 1.0
     temp[temp < 0.0] = 0.0
     
-    temp = np.array(temp * 255, dtype=np.uint8) if image.dtype == np.uint8 else temp
+    if image.dtype == np.uint8:
+        temp = np.array(temp * 255, dtype=np.uint8)
     return temp
 
 

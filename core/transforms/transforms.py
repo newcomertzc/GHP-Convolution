@@ -625,7 +625,7 @@ class PoissonNoise:
             return None
         
         image = x['image'] if isinstance(x, dict) else x
-        image = poisson_noise(image)
+        image = poisson_noise_v2(image)
         
         if isinstance(x, dict):
             x['image'] = image
