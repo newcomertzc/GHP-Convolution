@@ -6,9 +6,9 @@ from ...common_types import *
 
 
 __all__ = [
-    'rotate_bound', 'rotate_valid', 'impulse_noise', 'poisson_noise', 'poisson_noise_v2', 
-    'extract_square', 'extract_random_square', 
-    'calc_patch_indexs', 'extract_image_patches', 'rebuild_image_patches', 
+    'rotate_bound', 'rotate_valid', 'impulse_noise',
+    'poisson_noise', 'poisson_noise_deprecated', 'poisson_noise_v2_deprecated', 'gaussian_noise', 'gaussian_noise_opencv',
+    'extract_square', 'extract_random_square', 'calc_patch_indexs', 'extract_image_patches', 'rebuild_image_patches', 
 ]
 
 
@@ -73,12 +73,46 @@ def impulse_noise(image: ndarray, amount: float = 0.05, salt_vs_pepper: float = 
     return temp.reshape(image.shape)
 
 
-def poisson_noise(image: ndarray, vals: Optional[int] = None) -> ndarray:
+def poisson_noise(image: ndarray) -> ndarray:
+    """This function forces the image to be converted to 256 colors per channel.
+    Dicussion: https://github.com/scikit-image/scikit-image/pull/6531
+    """
+    temp = np.array(image * 255, dtype=np.uint8) if image.dtype != np.uint8 else image
+    temp = np.random.poisson(temp)
+    temp[temp > 255] = 255
+    temp[temp < 0] = 0
+    
+    if image.dtype == np.uint8:
+        temp = np.array(temp, dtype=np.uint8)
+    else:
+        temp = np.array(temp / 255.0, dtype=image.dtype)
+    return temp
+
+
+def poisson_noise_deprecated(image: ndarray, vals: Optional[int] = None) -> ndarray:
+    """This function behaves the same as the poisson noise in skimage.util.random_noise.
+    """
     if vals is None:
         vals = len(np.unique(image))
         vals = 2 ** np.ceil(np.log2(vals))
     
-    temp = image / 255.0 if image.dtype == np.uint8 else image
+    temp = np.array(image / 255.0) if image.dtype == np.uint8 else image.copy() 
+    temp = np.random.poisson(temp * vals) / vals
+    
+    temp[temp > 1.0] = 1.0
+    temp[temp < 0.0] = 0.0
+    
+    if image.dtype == np.uint8:
+        temp = np.array(temp * 255, dtype=np.uint8)
+    return temp
+
+
+def poisson_noise_v2_deprecated(image: ndarray, vals: Optional[int] = None) -> ndarray:
+    if vals is None:
+        vals = len(np.unique(image))
+        vals = 2 ** np.ceil(np.log2(vals))
+    
+    temp = np.array(image / 255.0, dtype=np.float32) if image.dtype == np.uint8 else image
     temp = np.random.poisson(temp * vals) / vals
     temp[temp > 1.0] = 1.0
     temp[temp < 0.0] = 0.0
@@ -88,13 +122,28 @@ def poisson_noise(image: ndarray, vals: Optional[int] = None) -> ndarray:
     return temp
 
 
-def poisson_noise_v2(image: ndarray, vals: Optional[int] = None) -> ndarray:
-    if vals is None:
-        vals = len(np.unique(image))
-        vals = 2 ** np.ceil(np.log2(vals))
+def gaussian_noise(image: ndarray, std: float = 0.1) -> ndarray:
+    # temp = np.array(image / 255.0) if image.dtype == np.uint8 else image.copy()
+    # ------
+    #   In fact, the differences between float64 and float32 is too small to affect the prediction of model.
+    # We adjust this just to make the dataset reproducible.
+    temp = np.array(image / 255.0, dtype=np.float32) if image.dtype == np.uint8 else image.copy()
+    temp += np.random.randn(*temp.shape) * std
     
-    temp = np.array(image / 255.0, dtype=np.float32) if image.dtype == np.uint8 else image
-    temp = np.random.poisson(temp * vals) / vals
+    temp[temp > 1.0] = 1.0
+    temp[temp < 0.0] = 0.0
+    
+    if image.dtype == np.uint8:
+        temp = np.array(temp * 255, dtype=np.uint8)
+    return temp
+
+
+def gaussian_noise_opencv(image: ndarray, std: float = 0.1) -> ndarray:
+    temp = np.array(image / 255.0) if image.dtype == np.uint8 else image.copy()
+    # cv.randn (102 µs ± 504 ns per loop) is significantly faster than np.random.randn (965 µs ± 4.62 µs per loop)
+    # however, cv.randn is not reproducible when training from checkpoint, as we can't get its random state
+    temp += np.reshape(cv.randn(np.zeros_like(temp).ravel(), 0, std), temp.shape)
+    
     temp[temp > 1.0] = 1.0
     temp[temp < 0.0] = 0.0
     

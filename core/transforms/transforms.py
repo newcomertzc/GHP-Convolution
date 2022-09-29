@@ -15,7 +15,7 @@ __all__ = [
     'get_input_transform', 'Remain', 'PrintInfo', 'SelectChannel', 'RandomHorizontalFlip', 'RandomVerticalFlip',
     'PreserveMaskValue', 'TransformBinaryMask', 'Resize', 'Compose', 'Parallel', 'PILToArray', 'RGBAToRGB',
     'ToRGB', 'ToGray', 'ToContiguousArray', 'RandomResize', 'RandomResize_discrete', 'RandomScale', 'RandomScale_discrete',
-    'RandomRotate', 'RandomRotate_discrete', 'RandomMedianFilter', 'RandomBoxFilter', 'RandomGaussianFilter_discrete',
+    'RandomRotate', 'RandomRotate_discrete', 'RandomMedianFilter', 'RandomBoxFilter', 'RandomGaussianFilter',
     'RandomAWGN', 'RandomAWGN_discrete', 'PoissonNoise', 'RandomImpulseNoise', 'RandomImpulseNoise_discrete',
     'Crop', 'RandomCrop', 'RandomPatch', 'RandomNPatches', 'AllPatches', 'SelectPatches', 'RandomTransform',
     'JPEGCompress', 'RandomJPEGCompress', 'WEBPCompress', 'RandomWEBPCompress', 'Normalize', 'ToTensor'
@@ -537,7 +537,7 @@ class RandomBoxFilter:
         return x
 
 
-class RandomGaussianFilter_discrete:
+class RandomGaussianFilter:
     def __init__(self, ksize_values=[3, 5, 7], std_values=[0]):
         """GaussianFilter. The standard deviation is calculated as ((ksize - 1) * 0.5 - 1) * 0.3 + 0.8.
 
@@ -570,8 +570,9 @@ class RandomGaussianFilter_discrete:
     
     
 class RandomAWGN:
-    def __init__(self, range=(0.03, 0.1)):
+    def __init__(self, range=(0.03, 0.1), func: Callable = gaussian_noise):
         self.range = range
+        self.func = func
         
     def __call__(self, x):
         if x is None:
@@ -580,12 +581,7 @@ class RandomAWGN:
         std = np.random.rand() * (self.range[1] - self.range[0]) + self.range[0]
         
         image = x['image'] if isinstance(x, dict) else x
-        image = np.array(image / 255.0, dtype=np.float32) if image.dtype == np.uint8 else image
-        image = image + np.reshape(
-            cv.randn(np.zeros_like(image).ravel(), 0, std), image.shape)
-        image[image > 1.0] = 1.0
-        image[image < 0.0] = 0.0
-        image = np.array(image * 255, dtype=np.uint8)
+        image = self.func(image, std=std)
         
         if isinstance(x, dict):
             x['image'] = image
@@ -595,8 +591,9 @@ class RandomAWGN:
     
     
 class RandomAWGN_discrete:
-    def __init__(self, values=np.arange(0.03, 0.11, 0.01)):
+    def __init__(self, values=np.arange(0.03, 0.11, 0.01), func: Callable = gaussian_noise):
         self.values = values
+        self.func = func
         
     def __call__(self, x):
         if x is None:
@@ -605,12 +602,7 @@ class RandomAWGN_discrete:
         std = np.random.choice(self.values)
         
         image = x['image'] if isinstance(x, dict) else x
-        image = np.array(image / 255.0, dtype=np.float32) if image.dtype == np.uint8 else image
-        image = image + np.reshape(
-            cv.randn(np.zeros_like(image).ravel(), 0, std), image.shape)
-        image[image > 1.0] = 1.0
-        image[image < 0.0] = 0.0
-        image = np.array(image * 255, dtype=np.uint8)
+        image = self.func(image, std=std)
         
         if isinstance(x, dict):
             x['image'] = image
@@ -620,12 +612,15 @@ class RandomAWGN_discrete:
 
 
 class PoissonNoise:
+    def __init__(self, func: Callable = poisson_noise):
+        self.func = func
+    
     def __call__(self, x):
         if x is None:
             return None
         
         image = x['image'] if isinstance(x, dict) else x
-        image = poisson_noise_v2(image)
+        image = self.func(image)
         
         if isinstance(x, dict):
             x['image'] = image

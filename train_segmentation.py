@@ -191,7 +191,7 @@ def get_default_transform(input_transform: tuple, toPatches: Callable, toJPEG: C
             ]),
             Compose([RandomMedianFilter(), toJPEG]),
             Compose([RandomBoxFilter(), toJPEG]),
-            Compose([RandomGaussianFilter_discrete(), toJPEG]),
+            Compose([RandomGaussianFilter(), toJPEG]),
             Compose([RandomAWGN_discrete(), toJPEG]),
             Compose([PoissonNoise(), toJPEG]),
             Compose([RandomImpulseNoise_discrete(), toJPEG]),
