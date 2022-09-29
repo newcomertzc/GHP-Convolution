@@ -82,7 +82,7 @@ def main(args):
             backbone_kwargs = backbone_kwargs
         )
     else:
-        if args.preproc is None or args.preproc is 'PreprocIdentity':
+        if args.preproc is None or args.preproc == 'PreprocIdentity':
             model = IMDNetwork.build_with_kwargs(
                 backbone_func = backbone.__dict__[args.backbone],
                 backbone_kwargs = {
