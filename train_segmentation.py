@@ -396,16 +396,16 @@ def get_args_parser(add_help=True):
     #     '-n', '--num-classes', default=10, type=int, help='total number of classes'
     # )
     
-    parser.add_argument('--backbone', default='DeepLabV3_ResNet', type=str, help='name of backbone network (Default: DeepLabV3_ResNet)')
+    parser.add_argument('--backbone', default='DeepLabV3_ResNet', type=str, help='backbone network (default: DeepLabV3_ResNet)')
     parser.add_argument('--pretrained', default=None, type=str, help='path of pretrained checkpoint')
     parser.add_argument(
         '--replace-stride-with-dilation', 
         default=[False, True, True], 
         type=str_to_bool, 
         nargs='+', 
-        help='Adjust the dilation of ResNet. (Default: [False, True, True])'
+        help='Adjust the dilation of ResNet. (default: [False, True, True])'
     )
-    parser.add_argument('--device', default='cuda', type=str, help='device (Use cuda or cpu, Default: cuda)')
+    parser.add_argument('--device', default='cuda', type=str, help='device (Use cuda or cpu, default: cuda)')
     parser.add_argument(
         '-b', '--batch-size', default=32, type=int, help='images per batch'
     )

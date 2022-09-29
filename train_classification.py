@@ -82,7 +82,7 @@ def main(args):
             backbone_kwargs = backbone_kwargs
         )
     else:
-        if args.preproc is None:
+        if args.preproc is None or args.preproc is 'PreprocIdentity':
             model = IMDNetwork.build_with_kwargs(
                 backbone_func = backbone.__dict__[args.backbone],
                 backbone_kwargs = {
@@ -407,12 +407,12 @@ def get_args_parser(add_help=True):
     # parser.add_argument(
     #     '-n', '--num-classes', default=10, type=int, help='total number of classes'
     # )
-    parser.add_argument('--backbone', default='ResNet', type=str, help='name of backbone network')
-    parser.add_argument('--backbone-func', default='resnet50', type=str, help='name of backbone function')
-    parser.add_argument('--preproc', default=None, type=str, help='name of preprocessing module (Default: None)')
+    parser.add_argument('--backbone', default='ResNet', type=str, help='backbone network')
+    parser.add_argument('--backbone-func', default='resnet50', type=str, help='backbone function')
+    parser.add_argument('--preproc', default=None, type=str, help='preprocessing module. (default: None)')
     parser.add_argument('--preproc-width', default=12, type=int, help='output channels of preprocessing module')
     parser.add_argument('--preproc-reg', default='L1', type=str, help='"L1" or "L2"')
-    parser.add_argument('--device', default='cuda', type=str, help='device (Use cuda or cpu, Default: cuda)')
+    parser.add_argument('--device', default='cuda', type=str, help='device (Use cuda or cpu, default: cuda)')
     parser.add_argument(
         '-b', '--batch-size', default=32, type=int, help='images per batch'
     )
@@ -423,8 +423,8 @@ def get_args_parser(add_help=True):
     #     '--label-smoothing', default=0.0, type=float, help='label smoothing (default: 0.0)', dest='label_smoothing'
     # )
     parser.add_argument('--show-model', action='store_true', help='Show model information.')
-    parser.add_argument('--print-freq', default=10, type=int, help='print frequency (Default: 10)')
-    parser.add_argument('--save-freq', default=10, type=int, help='save frequency (Default: 10)')
+    parser.add_argument('--print-freq', default=10, type=int, help='print frequency (default: 10)')
+    parser.add_argument('--save-freq', default=10, type=int, help='save frequency (default: 10)')
     parser.add_argument('--save-dir', default='saved_models/', type=str, help='path to save checkpoint')
     parser.add_argument('--checkpoint', default=None, type=str, help='path of the checkpoint to load')
     # parser.add_argument(
