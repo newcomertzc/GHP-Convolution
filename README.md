@@ -4,13 +4,13 @@ Pytorch implementation for "General High-Pass Convolution: A Novel Convolutional
 ## 1. How to train a classification network
 | Parameter                        | value                                                                              |
 | -------------------------------- | ---------------------------------------------------------------------------------- |
-| `--data-path`                    | `the path to training set`                                                         |
-| `--data-val-path`                | `the path to validation set`                                                       |
-| `--preproc`                      | `PreprocConv2d, PreprocGHPConv2d, PreprocIdentity(just a placeholder module)`      |
+| `--data-path`                    | `training set path`                                                                |
+| `--data-val-path`                | `validation set path`                                                              |
+| `--preproc`                      | `PreprocConv2d or PreprocGHPConv2d. If not specified, use a placeholder instead.`  |
 | `--backbone`                     | `ResNet, VGG, ConvNeXt, BayarCNN, BayarCNN_box, BayarCNN_GHP`...                   |
-| `--backbone-func`                | `resnet50, vgg13, convnext_tiny (function of torchvision.models or core.convnext)` |
-| `--use-deterministic-algorithms` | `if specified, use deterministic algorithms. Otherwise, use faster algorithms`     |
-| `--test-only`                    | `if specified, only test the network`                                              |
+| `--backbone-func`                | `resnet50, vgg13, convnext_tiny (function of torchvision.models and core.convnext used to create models)` |
+| `--use-deterministic-algorithms` | `if specified, set deterministic algorithms (but slower).`                         |
+| `--test-only`                    | `if specified, only test the network on the validation set.`                       |
 ### BayarCNN (BayarCNN_box, BayarCNN_GHP)
 ```
 python train_classification.py --backbone BayarCNN
@@ -37,7 +37,7 @@ python train_classification.py --backbone ResNet --backbone-func resnet50 --prep
 | `--data-val-path`                | `the path to validation set`                                                       |
 | `--backbone`                     | `DeepLabV3_ResNet, FCN_ResNet, FCN_VGG_8s, FCN_VGG_16s, FCN_VGG_8s`                |
 | `--pretrained`                   | `the path to your pretrained classification network checkpoint`                    |
-| `--replace-stride-with-dilation` | `adjust the dilation of ResNet`     |
+| `--replace-stride-with-dilation` | `adjust the dilation of ResNet`                                                    |
 | `--use-deterministic-algorithms` | `if specified, use deterministic algorithms. Otherwise, use faster algorithms`     |
 | `--test-only`                    | `if specified, only test the network`                                              |
 
