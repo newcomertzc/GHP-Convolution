@@ -18,7 +18,7 @@ class PreprocConv2d(BaseModule):
         kernel_size: int = 5,
         bias: bool = True,
         depthwise: bool = True,
-        norm_layer: Callable = NormIdentity,
+        norm_layer: Callable = nn.Identity,
         norm_layer_kwargs: dict = {},
         activ_layer: Module = nn.Identity()
     ) -> None:
@@ -75,24 +75,23 @@ class PreprocGHPConv2d(PreprocConv2d):
         kernel_size: int = 5,
         bias: bool = True,
         depthwise: bool = True,
-        alpha: float = 0.01,
-        penalty: str = 'L1',
+        alpha: float = 3.0,
+        penalty: str = 'L2',
         reduction: str = 'sum',
-        norm_layer: Callable = NormIdentity,
+        norm_layer: Callable = nn.Identity,
         norm_layer_kwargs: dict = {},
         activ_layer: Module = nn.Identity()
     ) -> None:
         """GHP Convolution for data preprocessing.
 
         Args:
-            
             in_channels (int, optional): Number of input channels. Default to 1.
             out_channels (int, optional): Number of output channels. Default to 12.
             depthwise (bool, optional): If True, set the groups of the convolutional 
                 layer to in_channels. Defaults to True.
-            alpha (float, optional): Penalty factor for regularization loss. Defaults to 0.01.
+            alpha (float, optional): Penalty factor for regularization loss. Defaults to 3.0.
             penalty (str, optional): Regularization technique used to calculate 
-                regularization loss. 'L1' or 'L2'. Defaults to 'L1'.
+                regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
         """
         super(PreprocGHPConv2d, self).__init__(
             in_channels, out_channels, kernel_size, bias, depthwise, norm_layer, norm_layer_kwargs, activ_layer)
@@ -127,7 +126,7 @@ class PreprocGHPConv2d(PreprocConv2d):
         params_label = super(PreprocGHPConv2d, self).get_params_label()
         
         params_label.append(f"{self.penalty}")
-        if self.alpha != 0.01:
+        if self.alpha != 1.0:
             params_label.append(f"a{self.alpha}")
             
         return params_label

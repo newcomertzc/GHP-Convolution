@@ -8,7 +8,7 @@ from .common_types import *
 
 
 __all__ = [
-    'BaseModule', 'NormModule', 'InheritModule', 'NormIdentity', 'PreprocIdentity', 
+    'BaseModule', 'InheritModule', 'PreprocIdentity', 
     'BaseBayarCNN', 'BaseFCN_VGG', 'BaseSegNetwork'
 ]
 
@@ -26,11 +26,6 @@ class BaseModule(Module):
     def copy_vars(self, vars_dict: dict) -> None:
         for key, val in vars_dict.items():
             setattr(self, key, val)
-    
-    
-class NormModule(BaseModule):
-    def __init__(self, size: int) -> None:
-        super(NormModule, self).__init__()
         
 
 class AssembleModule(BaseModule):
@@ -75,12 +70,6 @@ class InheritModule(BaseModule):
         """Should be overridden by all subclasses.
         """
         raise NotImplementedError
-
-
-class NormIdentity(NormModule, nn.Identity):
-    """Placeholder.
-    """
-    pass
 
 
 class PreprocIdentity(BaseModule, nn.Identity):

@@ -411,7 +411,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--backbone-func', default='resnet50', type=str, help='backbone function')
     parser.add_argument('--preproc', default=None, type=str, help='preprocessing module. (default: None)')
     parser.add_argument('--preproc-width', default=12, type=int, help='output channels of preprocessing module')
-    parser.add_argument('--preproc-reg', default='L1', type=str, help='"L1" or "L2"')
+    parser.add_argument('--preproc-reg', default='L2', type=str, help='"L1" or "L2"')
     parser.add_argument('--device', default='cuda', type=str, help='device (Use cuda or cpu, default: cuda)')
     parser.add_argument(
         '-b', '--batch-size', default=32, type=int, help='images per batch'
