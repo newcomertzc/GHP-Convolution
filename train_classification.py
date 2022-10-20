@@ -310,7 +310,7 @@ def evaluate(
     label_dtype = torch.int64 if num_classes != 1 else torch.float32
     cmatrix_shape = num_classes if num_classes != 1 else 2
     
-    with torch.no_grad():
+    with torch_forward_only():
         for data in tqdm(dataloader):
             inputs, labels = data
             inputs = inputs.to(input_dtype).to(device)

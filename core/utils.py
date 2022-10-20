@@ -13,8 +13,8 @@ from .common_types import *
 
 
 __all__ = [
-    'capitalize_name', 'keep_dir_valid', 'get_dir_name', 'get_base_name', 'path_join', 'str_to_bool', 'zero_pad', 'random_zero_pad', 
-    'set_seed', 'use_deterministic_algorithms', 'extract_weights', 'freeze_weights', 'label_smooth', 'one_hot', 
+    'capitalize_name', 'keep_dir_valid', 'get_dir_name', 'get_base_name', 'path_join', 'str_to_bool', 'torch_forward_only',
+    'zero_pad', 'random_zero_pad', 'set_seed', 'use_deterministic_algorithms', 'extract_weights', 'freeze_weights', 'label_smooth', 'one_hot', 
     'predict_multiclass', 'predict_binary', 'calc_accuracy', 'calc_mIoU', 'multiclass_to_binary', 'show_model', 'print_inconsistent_kwargs',
     'get_JPEG_stat', 'LabelSmoothingCrossEntropyLoss', 'FunctionExecutor', 'MetricKeeper'
 ]
@@ -26,6 +26,12 @@ special_words = {
     'vgg': 'VGG',
     'Vgg': 'VGG',
 }
+
+
+if 'inference_mode' in dir(torch):
+    torch_forward_only = torch.inference_mode
+else:
+    torch_forward_only = torch.no_grad
 
 
 def str_to_bool(s) -> bool:
