@@ -66,8 +66,8 @@ class BayarCNN_GHP(BaseBayarCNN):
     def __init__(
         self,
         num_classes: int,
-        alpha: float = 0.01,
-        penalty: str = 'L1',
+        alpha: float = 3.0,
+        penalty: str = 'L2',
         reduction: str = 'sum'
     ) -> None:
         """A variant of BayarCNN. Its first layer is replaced with GHP Convolution.
@@ -75,9 +75,9 @@ class BayarCNN_GHP(BaseBayarCNN):
         Args:
             num_classes (int): Total number of classes.
             in_channels (int, optional): Number of input channels. Defaults to 1.
-            alpha (float, optional): Penalty factor for regularization loss. Defaults to 0.01.
+            alpha (float, optional): Penalty factor for regularization loss. Defaults to 3.0.
             penalty (str, optional): Regularization technique used to calculate 
-                regularization loss. 'L1' or 'L2'. Defaults to 'L1'.
+                regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
         """
         super(BayarCNN_GHP, self).__init__(num_classes)
         valid_penalty = {'L1', 'L2'}
