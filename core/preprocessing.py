@@ -37,7 +37,7 @@ class PreprocConv2d(BaseModule):
         self.norm = norm_layer(out_channels, **norm_layer_kwargs)
         self.activ = activ_layer(**activ_layer_kwargs)
     
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         x = self.norm(x)
         x = self.activ(x)
@@ -75,7 +75,7 @@ class PreprocGHPConv2d(PreprocConv2d):
         out_channels: int = 12, 
         kernel_size: int = 5,
         bias: bool = True,
-        depthwise: bool = True,
+        # depthwise: bool = True,
         alpha: Optional[float] = None,
         penalty: str = 'L2',
         reduction: str = 'sum',
@@ -89,15 +89,13 @@ class PreprocGHPConv2d(PreprocConv2d):
         Args:
             in_channels (int, optional): Number of input channels. Default to 1.
             out_channels (int, optional): Number of output channels. Default to 12.
-            depthwise (bool, optional): If True, set the groups of the convolutional 
-                layer to in_channels. Defaults to True.
             alpha (float, optional): Penalty factor for regularization loss.
                 Defaults to 10.0 when penalty is 'L2' and 1.0 when penalty is 'L1'.
             penalty (str, optional): Regularization technique used to calculate 
                 regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
         """
         super(PreprocGHPConv2d, self).__init__(
-            in_channels, out_channels, kernel_size, bias, depthwise, norm_layer, norm_layer_kwargs, activ_layer, activ_layer_kwargs)
+            in_channels, out_channels, kernel_size, bias, True, norm_layer, norm_layer_kwargs, activ_layer, activ_layer_kwargs)
         valid_penalty = {'L1', 'L2'}
         valid_reduction = {'sum', 'mean'}
         if penalty not in valid_penalty:
@@ -116,7 +114,7 @@ class PreprocGHPConv2d(PreprocConv2d):
         self.penalty = penalty
         self.reduction = reduction
     
-    def calc_reg_loss(self) -> torch.Tensor:
+    def calc_reg_loss(self) -> Tensor:
         reg_funcs = {
             'L1': torch.abs,
             'L2': torch.square
