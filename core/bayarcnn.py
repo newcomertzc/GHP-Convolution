@@ -66,7 +66,7 @@ class BayarCNN_GHP(BaseBayarCNN):
     def __init__(
         self,
         num_classes: int,
-        alpha: float = 3.0,
+        alpha: Optional[float] = None,
         penalty: str = 'L2',
         reduction: str = 'sum'
     ) -> None:
@@ -75,7 +75,8 @@ class BayarCNN_GHP(BaseBayarCNN):
         Args:
             num_classes (int): Total number of classes.
             in_channels (int, optional): Number of input channels. Defaults to 1.
-            alpha (float, optional): Penalty factor for regularization loss. Defaults to 3.0.
+            alpha (float, optional): Penalty factor for regularization loss.
+                Defaults to 10.0 when penalty is 'L2' and 1.0 when penalty is 'L1'.
             penalty (str, optional): Regularization technique used to calculate 
                 regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
         """
@@ -88,7 +89,13 @@ class BayarCNN_GHP(BaseBayarCNN):
         if reduction not in valid_reduction:
             raise ValueError(f"reduction must be one of {valid_reduction},"
                              f" but got reduction='{reduction}'")
-        self.alpha = alpha
+        if alpha is not None:
+            self.alpha = alpha
+        elif penalty == 'L2':
+            self.alpha = 10.0
+        else:
+            self.alpha = 1.0
+        
         self.penalty = penalty
         self.reduction = reduction
 
