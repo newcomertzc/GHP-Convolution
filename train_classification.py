@@ -33,9 +33,9 @@ def main(args):
     # get transform
     quality_values, quality_probs, subsampling_probs = get_JPEG_stat(args.data_stat)
     toJPEG = RandomJPEGCompress(quality_values, quality_probs, subsampling_probs)
-    valid_input_type = {'green', 'gray', 'green'}
+    valid_input_type = {'green', 'gray', 'rgb'}
     if args.input_type not in valid_input_type:
-        raise ValueError(f"Invalid input_type {args.input_type}. Only \"green\", \"gray\" and"
+        raise ValueError(f"Invalid input_type {args.input_type}. Only \"green\", \"gray\" and "
                          f"\"rgb\" are supported.")
     else:
         input_transform = get_input_transform(args.input_type)
