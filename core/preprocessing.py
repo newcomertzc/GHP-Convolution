@@ -18,9 +18,10 @@ class PreprocConv2d(BaseModule):
         kernel_size: int = 5,
         bias: bool = True,
         depthwise: bool = True,
-        norm_layer: Callable = nn.Identity,
+        norm_layer: Callable[..., Module] = nn.Identity,
         norm_layer_kwargs: dict = {},
-        activ_layer: Module = nn.Identity()
+        activ_layer: Callable[..., Module] = nn.Identity,
+        activ_layer_kwargs: dict = {},
     ) -> None:
         """Plain Convolution for data preprocessing.
 
@@ -34,7 +35,7 @@ class PreprocConv2d(BaseModule):
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, padding = kernel_size // 2, 
                               groups = in_channels if depthwise else 1, bias = bias)
         self.norm = norm_layer(out_channels, **norm_layer_kwargs)
-        self.activ = activ_layer
+        self.activ = activ_layer(**activ_layer_kwargs)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv(x)
@@ -75,12 +76,13 @@ class PreprocGHPConv2d(PreprocConv2d):
         kernel_size: int = 5,
         bias: bool = True,
         depthwise: bool = True,
-        alpha: float = 3.0,
+        alpha: Optional[float] = None,
         penalty: str = 'L2',
         reduction: str = 'sum',
-        norm_layer: Callable = nn.Identity,
+        norm_layer: Callable[..., Module] = nn.Identity,
         norm_layer_kwargs: dict = {},
-        activ_layer: Module = nn.Identity()
+        activ_layer: Callable[..., Module] = nn.Identity,
+        activ_layer_kwargs: dict = {},
     ) -> None:
         """GHP Convolution for data preprocessing.
 
@@ -89,12 +91,13 @@ class PreprocGHPConv2d(PreprocConv2d):
             out_channels (int, optional): Number of output channels. Default to 12.
             depthwise (bool, optional): If True, set the groups of the convolutional 
                 layer to in_channels. Defaults to True.
-            alpha (float, optional): Penalty factor for regularization loss. Defaults to 3.0.
+            alpha (float, optional): Penalty factor for regularization loss.
+                Defaults to 10.0 when penalty is 'L2' and 1.0 when penalty is 'L1'.
             penalty (str, optional): Regularization technique used to calculate 
                 regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
         """
         super(PreprocGHPConv2d, self).__init__(
-            in_channels, out_channels, kernel_size, bias, depthwise, norm_layer, norm_layer_kwargs, activ_layer)
+            in_channels, out_channels, kernel_size, bias, depthwise, norm_layer, norm_layer_kwargs, activ_layer, activ_layer_kwargs)
         valid_penalty = {'L1', 'L2'}
         valid_reduction = {'sum', 'mean'}
         if penalty not in valid_penalty:
@@ -103,7 +106,13 @@ class PreprocGHPConv2d(PreprocConv2d):
         if reduction not in valid_reduction:
             raise ValueError(f"reduction must be one of {valid_reduction},"
                              f" but got reduction='{reduction}'")
-        self.alpha = alpha
+        if alpha is not None:
+            self.alpha = alpha
+        elif penalty == 'L2':
+            self.alpha = 10.0
+        else:
+            self.alpha = 1.0
+            
         self.penalty = penalty
         self.reduction = reduction
     
