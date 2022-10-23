@@ -388,7 +388,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--data-val-path', default='dataset/coco-val-seg/', type=str, help='validation set path')
     parser.add_argument('--data-stat', default='stat/imagenet_stat.pkl', type=str, help='path of dataset compression statistics file')
     # parser.add_argument(
-    #     '-i', '--input-type', default='green', type=str, help='"green", "gray" or "rgb"'
+    #     '-i', '--input-type', default='green', type=str, help='"green" or "rgb"'
     # )
     parser.add_argument('--patch-size', default=224, type=int, help='patch size')
     parser.add_argument('--patch-stride', default=160, type=int, help='(maximum) patch stride')

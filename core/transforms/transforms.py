@@ -28,7 +28,7 @@ def get_input_transform(input_type: str) -> tuple:
     The mean and std is calculated according to https://github.com/pytorch/vision/pull/1965.
 
     Args:
-        input_type (str): 'green', 'gray' or 'rgb'.
+        input_type (str): 'green' or 'rgb'.
 
     Returns:
         tuple: (input_convert, input_normalize)
@@ -39,11 +39,11 @@ def get_input_transform(input_type: str) -> tuple:
             Normalize(
                 mean=[0.454],
                 std=[0.220])),
-        'gray': (
-            ToGray(),
-            Normalize(
-                mean=[0.457],
-                std=[0.221])),
+        # 'gray': (
+        #     ToGray(),
+        #     Normalize(
+        #         mean=[0.457],
+        #         std=[0.221])),
         'rgb': (
             ToRGB(),
             Normalize(

@@ -33,9 +33,9 @@ def main(args):
     # get transform
     quality_values, quality_probs, subsampling_probs = get_JPEG_stat(args.data_stat)
     toJPEG = RandomJPEGCompress(quality_values, quality_probs, subsampling_probs)
-    valid_input_type = {'green', 'gray', 'rgb'}
+    valid_input_type = {'green', 'rgb'}
     if args.input_type not in valid_input_type:
-        raise ValueError(f"Invalid input_type {args.input_type}. Only \"green\", \"gray\" and "
+        raise ValueError(f"Invalid input_type {args.input_type}. Only \"green\" and "
                          f"\"rgb\" are supported.")
     else:
         input_transform = get_input_transform(args.input_type)
@@ -399,7 +399,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--data-val-path', default='dataset/imagenet-val-10800-4val/', type=str, help='validation set path')
     parser.add_argument('--data-stat', default='stat/imagenet_stat.pkl', type=str, help='path of dataset compression statistics file')
     parser.add_argument(
-        '-i', '--input-type', default='green', type=str, help='"green", "gray" or "rgb"'
+        '-i', '--input-type', default='green', type=str, help='"green" or "rgb"'
     )
     parser.add_argument('--patches-per-image', default=4, type=int, help='maximum number of patches per image')
     parser.add_argument('--patch-size', default=224, type=int, help='patch size')
