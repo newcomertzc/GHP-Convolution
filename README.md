@@ -53,12 +53,13 @@ python train_segmentation.py --pretrained your_pretrained_checkpoint --backbone 
 (For the parameter `replace-stride-with-dilation`, `0 1 1` means stride = 8 (FCN-ResNet-8s), `0 0 1` means stride = 16 and `0 0 0` means stride = 32)
 
 ## 3. Required libraries 
-`Pytorch == 1.9.1`  
-`Torchvision == 0.10.1`  
-`Pillow == 9.0.1`  
-`Numpy == 1.20.3`  
-`OpenCV-Python == 4.5.3.56`  
-`Scikit-learn == 0.24.2`  
+`python == 3.8.10`  
+`pytorch == 1.9.1`  
+`torchvision == 0.10.1`  
+`pillow == 9.0.1`  
+`numpy == 1.20.3`  
+`opencv-python == 4.5.3.56`  
+`scikit-learn == 0.24.2`  
 `pycocotools == 2.0.4`  
 `timm == 0.5.4`  
 `ptflops == 0.6.8`  
