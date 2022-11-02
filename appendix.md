@@ -47,4 +47,4 @@ using a penalty factor of 10 is slightly better than using a penalty factor of 3
 This experiment is conducted to verify the following two ideas:
 + For a plain convolutional layer, adding an activation function (or a batchnorm layer and an activation function) after it has been shown to improve the performance of the model in most cases
   verified to improve its performance. It's also very likely to work in this case.
-+ For a GHP convolutional layers, the bias is unnecessary or even detrimental, as it's designed to simulate a series of high-pass filters. Removing the bias may helps. 
++ For a GHP convolutional layer, the bias is unnecessary or even detrimental, as it's designed to simulate a series of high-pass filters. Removing the bias may helps. 
