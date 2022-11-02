@@ -33,7 +33,7 @@ when the number of epoch reaches 400 and 600.
 This new learning rate strategy reduces the randomness of model performance, so we only conduct this experiment on Tesla-P100 GPU. The experimental results show that
 using a penalty factor of 10 is slightly better than using a penalty factor of 3, and the former is more stable.
 
-## 2. Adding an activation layer or remove the bias of convolution layer
+## 2. Adding an activation layer or removing the bias of convolution layer
 | Model | 2021 | 2022 | 2023 | AVG |
 | - | :-: | :-: | :-: | :-: |
 | Conv-ResNet50           | 91.44 | 91.04 | 91.37 | 91.28 |
