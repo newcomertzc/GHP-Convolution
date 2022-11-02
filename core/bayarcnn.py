@@ -90,11 +90,14 @@ class BayarCNN_GHP(BaseBayarCNN):
             raise ValueError(f"reduction must be one of {valid_reduction},"
                              f" but got reduction='{reduction}'")
         if alpha is not None:
-            self.alpha = alpha
+            if alpha == int(alpha):
+                self.alpha = int(alpha)
+            else:
+                self.alpha = alpha
         elif penalty == 'L2':
-            self.alpha = 10.0
+            self.alpha = 10
         else:
-            self.alpha = 1.0
+            self.alpha = 1
         
         self.penalty = penalty
         self.reduction = reduction
@@ -104,12 +107,12 @@ class BayarCNN_GHP(BaseBayarCNN):
             'L1': torch.abs,
             'L2': torch.square
         }
-        sum_funcs = {
+        gather_funcs = {
             'sum': torch.sum,
             'mean': torch.mean
         }
         reg_func = reg_funcs[self.penalty]
-        sum_func = sum_funcs[self.reduction]
-        reg_loss = self.alpha * torch.sum(reg_func(sum_func(self.convRes.weight, dim=[2, 3])))
+        gather_func = gather_funcs[self.reduction]
+        reg_loss = self.alpha * torch.sum(reg_func(gather_func(self.convRes.weight, dim=[2, 3])))
         
         return reg_loss

@@ -36,6 +36,11 @@ class PreprocConv2d(BaseModule):
                               groups = in_channels if depthwise else 1, bias = bias)
         self.norm = norm_layer(out_channels, **norm_layer_kwargs)
         self.activ = activ_layer(**activ_layer_kwargs)
+        
+        if isinstance(self.norm, nn.BatchNorm2d):
+            self.name += 'BN'    
+        if not isinstance(self.activ, nn.Identity):
+            self.name += f"{self.activ.__class__.__name__}"
     
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
@@ -51,17 +56,10 @@ class PreprocConv2d(BaseModule):
             params_label.append(f"{self.conv.in_channels}c")
         if self.conv.out_channels != 12:
             params_label.append(f"w{self.conv.out_channels}")
-            
+        if self.conv.bias is None:
+            params_label.append('nb')
         if self.conv.kernel_size[0] != 5:
             params_label.append(f"s{self.conv.kernel_size[0]}")
-        
-        if isinstance(self.norm, nn.BatchNorm2d):
-            params_label.append('BN')
-        elif isinstance(self.norm, nn.LayerNorm):
-            params_label.append('LN')
-            
-        if not isinstance(self.activ, nn.Identity):
-            params_label.append(self.activ.__class__.__name__)
             
         return params_label
     
@@ -105,11 +103,14 @@ class PreprocGHPConv2d(PreprocConv2d):
             raise ValueError(f"reduction must be one of {valid_reduction},"
                              f" but got reduction='{reduction}'")
         if alpha is not None:
-            self.alpha = alpha
+            if alpha == int(alpha):
+                self.alpha = int(alpha)
+            else:
+                self.alpha = alpha
         elif penalty == 'L2':
-            self.alpha = 10.0
+            self.alpha = 10
         else:
-            self.alpha = 1.0
+            self.alpha = 1
             
         self.penalty = penalty
         self.reduction = reduction
@@ -119,13 +120,13 @@ class PreprocGHPConv2d(PreprocConv2d):
             'L1': torch.abs,
             'L2': torch.square
         }
-        sum_funcs = {
+        gather_funcs = {
             'sum': torch.sum,
             'mean': torch.mean
         }
         reg_func = reg_funcs[self.penalty]
-        sum_func = sum_funcs[self.reduction]
-        reg_loss = self.alpha * torch.sum(reg_func(sum_func(self.conv.weight, dim=[2, 3])))
+        gather_func = gather_funcs[self.reduction]
+        reg_loss = self.alpha * torch.sum(reg_func(gather_func(self.conv.weight, dim=[2, 3])))
         
         return reg_loss
     

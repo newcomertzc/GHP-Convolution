@@ -75,7 +75,8 @@ def main(args):
             'num_classes': num_classes
         }
         if 'GHP' in args.backbone:
-            backbone_kwargs['penalty'] = args.preproc_reg
+            backbone_kwargs['penalty'] = args.reg_penalty
+            backbone_kwargs['alpha'] = args.reg_penalty_factor
         
         model = IMDNetwork.build_with_kwargs(
             backbone_func = bayarcnn.__dict__[args.backbone],
@@ -95,9 +96,18 @@ def main(args):
             preprocessing_kwargs = {
                 'in_channels': in_channels,
                 'out_channels': args.preproc_width,
+                'bias': not args.preproc_no_bias,
+                'norm_layer': nn.BatchNorm2d if args.preproc_bn else nn.Identity,
+                'activ_layer': nn.ReLU if args.preproc_relu else nn.Identity,
             }
+            
             if 'GHP' in args.preproc:
-                preprocessing_kwargs['penalty'] = args.preproc_reg
+                preprocessing_kwargs['penalty'] = args.reg_penalty
+                preprocessing_kwargs['alpha'] = args.reg_penalty_factor
+                
+            print('***' * 6 + 'preproc kwargs' + '***' * 6)
+            for k, v in preprocessing_kwargs.items():
+                print(f"{k}: {v}")
             
             model = IMDNetwork.build_with_kwargs(
                 backbone_func = backbone.__dict__[args.backbone],
@@ -411,7 +421,11 @@ def get_args_parser(add_help=True):
     parser.add_argument('--backbone-func', default='resnet50', type=str, help='backbone function')
     parser.add_argument('--preproc', default=None, type=str, help='preprocessing module. (default: None)')
     parser.add_argument('--preproc-width', default=12, type=int, help='output channels of preprocessing module')
-    parser.add_argument('--preproc-reg', default='L2', type=str, help='"L1" or "L2"')
+    parser.add_argument('--preproc-no-bias', action='store_true', help='Don\'t use bias in preprocessing conv.')
+    parser.add_argument('--preproc-bn', action='store_true', help='Use BatchNorm in preprocessing module.')
+    parser.add_argument('--preproc-relu', action='store_true', help='Use ReLU Activation in preprocessing module.')
+    parser.add_argument('--reg-penalty', default='L2', type=str, help='"L1" or "L2"')
+    parser.add_argument('--reg-penalty-factor', default=None, type=float, help='penalty factor')
     parser.add_argument('--device', default='cuda', type=str, help='device (Use cuda or cpu, default: cuda)')
     parser.add_argument(
         '-b', '--batch-size', default=32, type=int, help='images per batch'
