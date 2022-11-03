@@ -45,6 +45,5 @@ using a penalty factor of 10 is slightly better than using a penalty factor of 3
 | GHPConv-ResNet50-L2-a10 | 91.92 | 91.86 | 91.97 | 91.92 |
 
 This experiment is conducted to verify the following two ideas:
-+ For a plain convolutional layer, adding an activation function (or a batchnorm layer and an activation function) after it has been shown to improve the performance of the model in most cases
-  verified to improve its performance. It's also very likely to work in this case.
-+ For a GHP convolutional layer, the bias is unnecessary or even detrimental, as it's designed to simulate a series of high-pass filters. Removing the bias may helps. 
++ From the perspective of a plain convolutional layer, adding an activation function (or a batchnorm layer followed by an activation function) after it has been widely adopted in CNNs. It may also works in this case.
++ From the perspective of a GHP convolutional layer, the bias is unnecessary or even detrimental, as it's designed to simulate a series of high-pass filters. Removing the bias may helps. 
