@@ -76,7 +76,8 @@ def main(args):
         }
         if 'GHP' in args.backbone:
             backbone_kwargs['penalty'] = args.reg_penalty
-            backbone_kwargs['alpha'] = args.reg_penalty_factor
+            if args.reg_penalty_factor is not None:
+                backbone_kwargs['alpha'] = args.reg_penalty_factor
         
         model = IMDNetwork.build_with_kwargs(
             backbone_func = bayarcnn.__dict__[args.backbone],
@@ -103,7 +104,8 @@ def main(args):
             
             if 'GHP' in args.preproc:
                 preprocessing_kwargs['penalty'] = args.reg_penalty
-                preprocessing_kwargs['alpha'] = args.reg_penalty_factor
+                if args.reg_penalty_factor is not None:
+                    preprocessing_kwargs['alpha'] = args.reg_penalty_factor
                 
             print('***' * 6 + 'preproc kwargs' + '***' * 6)
             for k, v in preprocessing_kwargs.items():
