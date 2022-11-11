@@ -36,13 +36,13 @@ using a penalty factor of 10 is slightly better than using a penalty factor of 3
 ## 2. Adding an activation layer or removing the bias of convolution layer
 | Model | 2021 | 2022 | 2023 | AVG |
 | - | :-: | :-: | :-: | :-: |
-| Conv-ResNet50           | 91.44 | 91.04 | 91.37 | 91.28 |
-| ConvReLU-ResNet50       | 91.59 | 91.36 | 91.37 | 91.44 |
-| ConvBNReLU-ResNet50     | 91.36 | 91.35 | 91.50 | 91.40 |
-| GHPConv-ResNet50-L2-a3  | 92.04 | 91.65 | 91.45 | 91.71 |
-| GHPConv-ResNet50-L2-a3  | 91.72 | 91.81 | 91.92 | 91.82 |
-| GHPConv-ResNet50-L2-a10 | 91.90 | 91.42 | 92.06 | 91.79 |
-| GHPConv-ResNet50-L2-a10 | 91.92 | 91.86 | 91.97 | 91.92 |
+| Conv-ResNet50             | 91.44 | 91.04 | 91.37 | 91.28 |
+| ConvReLU-ResNet50         | 91.59 | 91.36 | 91.37 | 91.44 |
+| ConvBNReLU-ResNet50       | 91.36 | 91.35 | 91.50 | 91.40 |
+| GHPConv-ResNet50-L2-a3    | 92.04 | 91.65 | 91.45 | 91.71 |
+| GHPConv-ResNet50-nb-L2-a3 | 91.72 | 91.81 | 91.92 | 91.82 |
+| GHPConv-ResNet50-L2-a10   | 91.90 | 91.42 | 92.06 | 91.79 |
+| GHPConv-ResNet50-nb-L2-a10| 91.92 | 91.86 | 91.97 | 91.92 |
 
 This experiment is conducted to verify the following two ideas:
 + From the perspective of a plain convolutional layer, adding an activation function (or a batchnorm layer followed by an activation function) after it has been widely adopted in CNNs. It may also works in this case.
