@@ -64,6 +64,5 @@ python train_segmentation.py --pretrained your_pretrained_checkpoint --backbone 
 `opencv-python == 4.5.3.56`  
 `scikit-learn == 0.24.2`  
 `pycocotools == 2.0.4`  
-`timm == 0.5.4`  
 `ptflops == 0.6.8`  
 `tqdm == 4.64.0`  

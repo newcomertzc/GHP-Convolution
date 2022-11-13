@@ -307,6 +307,7 @@ def train_one_epoch(
     del dataloader
                 
 
+@torch_forward_only()
 def evaluate(
     model: BaseModule, 
     criterion: Callable, 
@@ -322,27 +323,26 @@ def evaluate(
     label_dtype = torch.int64 if num_classes != 1 else torch.float32
     cmatrix_shape = num_classes if num_classes != 1 else 2
     
-    with torch_forward_only():
-        for data in tqdm(dataloader):
-            inputs, labels = data
-            inputs = inputs.to(input_dtype).to(device)
-            labels = labels.to(label_dtype).to(device)
-            
-            out = model(inputs)
-            if num_classes == 1:
-                out = out.squeeze(dim=-1)
-            loss = criterion(out, labels)
-            
-            metric_keeper.running_val_loss[0] += loss.item()
-            metric_keeper.running_val_loss[1] += 1
-            
-            y_true = labels.cpu()
-            if num_classes == 1:
-                y_pred = predict_binary(out)
-            else:
-                y_pred = predict_multiclass(out)
-            metric_keeper.val_cmatrix += sklearn_metrics.confusion_matrix(
-                y_true, y_pred, labels=np.arange(cmatrix_shape))
+    for data in tqdm(dataloader):
+        inputs, labels = data
+        inputs = inputs.to(input_dtype).to(device)
+        labels = labels.to(label_dtype).to(device)
+        
+        out = model(inputs)
+        if num_classes == 1:
+            out = out.squeeze(dim=-1)
+        loss = criterion(out, labels)
+        
+        metric_keeper.running_val_loss[0] += loss.item()
+        metric_keeper.running_val_loss[1] += 1
+        
+        y_true = labels.cpu()
+        if num_classes == 1:
+            y_pred = predict_binary(out)
+        else:
+            y_pred = predict_multiclass(out)
+        metric_keeper.val_cmatrix += sklearn_metrics.confusion_matrix(
+            y_true, y_pred, labels=np.arange(cmatrix_shape))
                 
     metric_keeper.val_loss_dict[epoch] = (
         metric_keeper.running_val_loss[0] / metric_keeper.running_val_loss[1])
