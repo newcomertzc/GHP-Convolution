@@ -147,6 +147,8 @@ def main(args):
     if args.checkpoint:
         print('load checkpoint...')
         start_epoch = load_checkpoint(model, optimizer, metric_keeper, args.checkpoint)
+        if args.force_lr:
+            optimizer.param_groups[0]['lr'] = args.lr
     else:
         start_epoch = 1
         metric_keeper.add_metric('loss_dict', {})
@@ -435,9 +437,11 @@ def get_args_parser(add_help=True):
     parser.add_argument('--epochs', default=800, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--opt', default='RAdam', type=str, help='optimizer')
     parser.add_argument('--lr', default=1e-4, type=float, help='learning rate')
-    # parser.add_argument(
-    #     '--label-smoothing', default=0.0, type=float, help='label smoothing (default: 0.0)', dest='label_smoothing'
-    # )
+    parser.add_argument(
+        '--force-lr', 
+        action='store_true', 
+        help='force learning rate to be --lr (training with checkpoint will ignore --lr if you don\'t activate this option)'
+    )
     parser.add_argument('--show-model', action='store_true', help='Show model information.')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency (default: 10)')
     parser.add_argument('--save-freq', default=10, type=int, help='save frequency (default: 10)')
@@ -446,7 +450,7 @@ def get_args_parser(add_help=True):
     # parser.add_argument(
     #     "--pretrained",
     #     dest="pretrained",
-    #     help="Use pre-trained models from the modelzoo",
+    #     help="Use pre-trained models from the model zoo",
     #     action="store_true",
     # )
     parser.add_argument(
