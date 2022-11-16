@@ -21,6 +21,7 @@ from core.data.functional import get_clf_dataloader
 from core.common_types import *
 from core.utils import *
 from core.transforms import *
+from core.transforms.functional import gaussian_noise_opencv, poisson_noise_v2_deprecated
 
 
 def main(args):
@@ -43,7 +44,7 @@ def main(args):
         toPatches = RandomPatch(args.patch_size, args.patch_stride)
     else:
         toPatches = RandomNPatches(args.patch_size, args.patch_stride, args.patches_per_image)
-    transform, after_transform = get_default_transform(input_transform, toPatches, toJPEG)
+    transform, after_transform = get_default_transform(input_transform, toPatches, toJPEG, args.reproduce)
     transform_val = Compose([PILToArray(), after_transform])
     
     # get dataset and dataloader
@@ -204,8 +205,15 @@ def get_model_func(model_func: str) -> Callable:
     return model_funcs[model_func]
 
 
-def get_default_transform(input_transform: tuple, toPatches: Callable, toJPEG: Callable) -> tuple:
+def get_default_transform(input_transform: tuple, toPatches: Callable, toJPEG: Callable, reproduce: bool=False) -> tuple:
     input_convert, input_normalize = input_transform
+    
+    if reproduce:
+        randAWGN = RandomAWGN_discrete(func=gaussian_noise_opencv)
+        randPoissonN = PoissonNoise(func=poisson_noise_v2_deprecated)
+    else:
+        randAWGN = RandomAWGN_discrete()
+        randPoissonN = PoissonNoise()
     
     transform = Compose([
         RGBAToRGB(),
@@ -232,8 +240,8 @@ def get_default_transform(input_transform: tuple, toPatches: Callable, toJPEG: C
             Compose([RandomMedianFilter(), toJPEG, toPatches]),
             Compose([RandomBoxFilter(), toJPEG, toPatches]),
             Compose([RandomGaussianFilter(), toJPEG, toPatches]),
-            Compose([RandomAWGN_discrete(), toJPEG, toPatches]),
-            Compose([PoissonNoise(), toJPEG, toPatches]),
+            Compose([randAWGN, toJPEG, toPatches]),
+            Compose([randPoissonN, toJPEG, toPatches]),
             Compose([RandomImpulseNoise_discrete(), toJPEG, toPatches]),
         ],
             return_label=True),
@@ -412,6 +420,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--data-path', default='dataset/imagenet-train-40c-50ipc/', type=str, help='training set path')
     parser.add_argument('--data-val-path', default='dataset/imagenet-val-10800-4val/', type=str, help='validation set path')
     parser.add_argument('--data-stat', default='stat/imagenet_stat.pkl', type=str, help='path of dataset compression statistics file')
+    parser.add_argument('--reproduce', action='store_true', help='use deprecated functions to reproduce the experimental results')
     parser.add_argument(
         '-i', '--input-type', default='green', type=str, help='"green" or "rgb"'
     )
