@@ -136,7 +136,6 @@ class PreprocGHPConv2d(PreprocConv2d):
         params_label = super(PreprocGHPConv2d, self).get_params_label()
         
         params_label.append(f"{self.penalty}")
-        if self.alpha != 1.0:
-            params_label.append(f"a{self.alpha}")
+        params_label.append(f"a{self.alpha}")
             
         return params_label
