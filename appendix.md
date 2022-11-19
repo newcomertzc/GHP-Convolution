@@ -1,7 +1,7 @@
 # Appendix
 The following are some supplementary experiments.
 
-## 1. The optimal regularization approach and penalty factor for GHP Convolution
+## 1. The optimal regularization and penalty factor for GHP Convolution
 #### Accuracy of different models
 | Model | 2021 | 2022 | 2023 | AVG |
 | - | :-: | :-: | :-: | :-: |
