@@ -66,8 +66,8 @@ class BayarCNN_GHP(BaseBayarCNN):
     def __init__(
         self,
         num_classes: int,
-        alpha: Optional[float] = None,
-        penalty: str = 'L2',
+        alpha: float = 0.01,
+        penalty: str = 'L1',
         reduction: str = 'sum'
     ) -> None:
         """A variant of BayarCNN. Its first layer is replaced with GHP Convolution.
@@ -76,9 +76,9 @@ class BayarCNN_GHP(BaseBayarCNN):
             num_classes (int): Total number of classes.
             in_channels (int, optional): Number of input channels. Defaults to 1.
             alpha (float, optional): Penalty factor for regularization loss.
-                Defaults to 10.0 when penalty is 'L2' and 1.0 when penalty is 'L1'.
+                Defaults to 0.01.
             penalty (str, optional): Regularization technique used to calculate 
-                regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
+                regularization loss. 'L1' or 'L2'. Defaults to 'L1'.
         """
         super(BayarCNN_GHP, self).__init__(num_classes)
         valid_penalty = {'L1', 'L2'}
@@ -89,16 +89,7 @@ class BayarCNN_GHP(BaseBayarCNN):
         if reduction not in valid_reduction:
             raise ValueError(f"reduction must be one of {valid_reduction},"
                              f" but got reduction='{reduction}'")
-        if alpha is not None:
-            if alpha == int(alpha):
-                self.alpha = int(alpha)
-            else:
-                self.alpha = alpha
-        elif penalty == 'L2':
-            self.alpha = 10
-        else:
-            self.alpha = 1
-        
+        self.alpha = alpha
         self.penalty = penalty
         self.reduction = reduction
 
