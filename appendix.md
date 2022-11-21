@@ -1,7 +1,7 @@
 # Appendix
 The following are some supplementary experiments.
 
-## 1. A better regularization and penalty factor for GHP Convolution
+## 1. A better penalty factor for GHP Convolution
 #### Update of some experimental results in the paper
 | Model | Acc | Params | Macs | 
 | - | :-: | :-: | :-: |
