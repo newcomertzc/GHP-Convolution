@@ -136,6 +136,10 @@ def main(args):
     # get metrics keeper 
     cmatrix_shape = num_classes if num_classes != 1 else 2
     
+    # set save_freq to 20 in reproduce mode
+    if args.reproduce:
+        args.save_freq = 20
+    
     metric_keeper = MetricKeeper()
     metric_keeper.add_metric('running_loss', [0.0, 0])
     metric_keeper.add_metric('running_val_loss', [0.0, 0])
@@ -148,8 +152,7 @@ def main(args):
     if args.checkpoint:
         print('load checkpoint...')
         start_epoch = load_checkpoint(model, optimizer, metric_keeper, args.checkpoint)
-        if args.force_lr:
-            optimizer.param_groups[0]['lr'] = args.lr
+        optimizer.param_groups[0]['lr'] = args.lr
     else:
         start_epoch = 1
         metric_keeper.add_metric('loss_dict', {})
@@ -420,7 +423,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--data-path', default='dataset/imagenet-train-40c-50ipc/', type=str, help='training set path')
     parser.add_argument('--data-val-path', default='dataset/imagenet-val-10800-4val/', type=str, help='validation set path')
     parser.add_argument('--data-stat', default='stat/imagenet_stat.pkl', type=str, help='path of dataset compression statistics file')
-    parser.add_argument('--reproduce', action='store_true', help='use deprecated functions to reproduce the experimental results')
+    parser.add_argument('--reproduce', action='store_true', help='Use some deprecated functions and training settings to reproduce the experimental results')
     parser.add_argument(
         '-i', '--input-type', default='green', type=str, help='"green" or "rgb"'
     )
@@ -446,11 +449,6 @@ def get_args_parser(add_help=True):
     parser.add_argument('--epochs', default=800, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--opt', default='RAdam', type=str, help='optimizer')
     parser.add_argument('--lr', default=1e-4, type=float, help='learning rate')
-    parser.add_argument(
-        '--force-lr', 
-        action='store_true', 
-        help='force learning rate to be --lr (training with checkpoint will ignore --lr if you don\'t activate this option)'
-    )
     parser.add_argument('--show-model', action='store_true', help='Show model information.')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency (default: 10)')
     parser.add_argument('--save-freq', default=10, type=int, help='save frequency (default: 10)')

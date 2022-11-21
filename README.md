@@ -11,6 +11,7 @@ Pytorch implementation for "General High-Pass Convolution: A Novel Convolutional
 | `--backbone-func`                | `resnet50, vgg13, convnext_tiny (function of torchvision.models and core.convnext used to create models)` |
 | `--use-deterministic-algorithms` | `if specified, use deterministic algorithms (but slower).`                         |
 | `--test-only`                    | `if specified, only test the network on validation set.`                           |
+| `--reproduce`                    | `if specified, use some deprecated functions and training settings to reproduce the experimental results.` |
 ### BayarCNN (or BayarCNN_box, BayarCNN_GHP)
 ```
 python train_classification.py --backbone BayarCNN
