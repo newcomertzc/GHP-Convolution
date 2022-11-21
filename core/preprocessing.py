@@ -90,7 +90,7 @@ class PreprocGHPConv2d(PreprocConv2d):
             depthwise (bool, optional): If True, set the groups of the convolutional 
                 layer to in_channels. Defaults to True.
             alpha (float, optional): Penalty factor for regularization loss.
-                Defaults to 10.0 when penalty is 'L2' and 1.0 when penalty is 'L1'.
+                Defaults to 10.0 when penalty is 'L2' and 0.01 when penalty is 'L1'.
             penalty (str, optional): Regularization technique used to calculate 
                 regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
         """
@@ -112,7 +112,7 @@ class PreprocGHPConv2d(PreprocConv2d):
         elif penalty == 'L2':
             self.alpha = 10
         else:
-            self.alpha = 1
+            self.alpha = 0.01
             
         self.penalty = penalty
         self.reduction = reduction
