@@ -1,5 +1,5 @@
 # GHP-Convolution
-Pytorch implementation for "General High-Pass Convolution: A Novel Convolutional Layer for Image Manipulation Detection".
+This repository is an official PyTorch implementation of [General High-Pass Convolution: A Novel Convolutional Layer for Image Manipulation Detection](https://link.springer.com/chapter/10.1007/978-3-031-18907-4_11).
 
 ## 1. To train a image manipulaion classification network
 | Parameter                        | value                                                                              |
