@@ -1,7 +1,7 @@
 # Appendix
 The following are some supplementary experiments.
 
-## 1. The optimal regularization and penalty factor for GHP Convolution
+## 1. A better regularization and penalty factor for GHP Convolution
 #### Update of some experimental results in the paper
 | Model | Acc | Params | Macs | 
 | - | :-: | :-: | :-: |
@@ -18,9 +18,9 @@ The following are some supplementary experiments.
 | GHPConv-ConvNext-T-L1-a0.01 | **88.40** | 27.84M | 4.53G |
 | GHPConv-ConvNext-T-L2-a10   | 87.67 | 27.84M | 4.53G |
 
-These new checkpoints are accessible at [saved_models](saved_models).
+New checkpoints are also accessible at [saved_models](saved_models).
 
-#### Accuracy of different models
+#### Accuracy of models adopting different regularization and different penalty factors
 | Model | 2021 | 2022 | 2023 | AVG |
 | - | :-: | :-: | :-: | :-: |
 | ResNet50                | 86.00 | 85.90 | 87.01 | 86.30 |
@@ -32,11 +32,10 @@ These new checkpoints are accessible at [saved_models](saved_models).
 | GHPConv-ResNet50-L2-a3  | 91.02 | 90.81 | 90.75 | **90.86** |
 | GHPConv-ResNet50-L2-a10 | 90.74 | 90.70 | 91.14 | **90.86** |
 
-L1-a1 indicates that the model is trained adopting L1 regularization with a penalty factor of 1, 2021 indicates the model is trained using a random seed of 2021, and so on.
-Each value in the table above is an average of results run on three different models of GPU (Tesla-P100, RTX-3060ti and RTX-3080). 
-That is, we conduct this experiments using three different random seeds on three different models of GPU to reduce the interference of random factors.
-This range of 1 - 10 is determined based on some preliminary experimental results. 
-The experimental results show that adopting L2 regularization with a penalty factor of 3 or 10 is the best choice.
+L1-a1 indicates that the model is trained adopting L1 regularization with a penalty factor of 1, 2021 indicates that the model is trained using a random seed of 2021, and so on.
+Each value in the table is an average of results run on three different GPU (Tesla-P100, RTX-3060ti and RTX-3080). 
+That is, we conduct this experiments using three different random seeds on three different models of GPU (to reduce the interference of random factors).
+The experimental results show that adopting L2 regularization with a penalty factor of 3 or 10 is a better choice.
 
 #### Accuracy of different models using a new learning rate strategy
 | Model | 2021 | 2022 | 2023 | AVG |
@@ -46,10 +45,10 @@ The experimental results show that adopting L2 regularization with a penalty fac
 | GHPConv-ResNet50-L2-a3  | 92.04 | 91.65 | 91.45 | 91.71 |
 | GHPConv-ResNet50-L2-a10 | 91.90 | 91.42 | 92.06 | **91.79** |
 
-For further experiments, we adopt a new learning rate strategy different from the paper, i.e., we use an initial learning rate of 1e-4 and decaying it by a factor of 10 
-when the number of epoch reaches 400 and 600. 
+For further experiments, we adopt a new learning rate strategy different from that in the paper, i.e., we use an initial learning rate of 1e-4 and decrease it by a factor of 10 
+when the number of epochs reaches 400 and 600. 
 This new learning rate strategy reduces the randomness of model performance, so we only conduct this experiment on Tesla-P100 GPU. The experimental results show that
-using a penalty factor of 10 is slightly better than using a penalty factor of 3, and the former is more stable.
+adopting a penalty factor of 10 is slightly better than using a penalty factor of 3.
 
 ## 2. Some experimental improvements
 | Model | 2021 | 2022 | 2023 | AVG |
