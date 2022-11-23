@@ -59,7 +59,7 @@ class PreprocConv2d(BaseModule):
         if self.conv.bias is None:
             params_label.append('nb')
         if self.conv.kernel_size[0] != 5:
-            params_label.append(f"s{self.conv.kernel_size[0]}")
+            params_label.append(f"k{self.conv.kernel_size[0]}")
             
         return params_label
     
