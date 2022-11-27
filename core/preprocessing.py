@@ -53,7 +53,7 @@ class PreprocConv2d(BaseModule):
         params_label = super(PreprocConv2d, self).get_params_label()
         
         if self.conv.in_channels != 1:
-            params_label.append(f"{self.conv.in_channels}c")
+            params_label.append(f"c{self.conv.in_channels}")
         if self.conv.out_channels != 12:
             params_label.append(f"w{self.conv.out_channels}")
         if self.conv.bias is None:
