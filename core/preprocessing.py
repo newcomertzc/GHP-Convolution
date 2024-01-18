@@ -74,7 +74,7 @@ class PreprocGHPConv2d(PreprocConv2d):
         kernel_size: int = 5,
         bias: bool = True,
         depthwise: bool = True,
-        alpha: Optional[float] = None,
+        alpha: float = 3,
         penalty: str = 'L2',
         reduction: str = 'sum',
         norm_layer: Callable[..., Module] = nn.Identity,
@@ -89,8 +89,7 @@ class PreprocGHPConv2d(PreprocConv2d):
             out_channels (int, optional): Number of output channels. Default to 12.
             depthwise (bool, optional): If True, set the groups of the convolutional 
                 layer to in_channels. Defaults to True.
-            alpha (float, optional): Penalty factor for regularization loss.
-                Defaults to 10.0 when penalty is 'L2' and 0.01 when penalty is 'L1'.
+            alpha (float, optional): Penalty factor for regularization loss. Default to 3.
             penalty (str, optional): Regularization technique used to calculate 
                 regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
         """
@@ -104,15 +103,10 @@ class PreprocGHPConv2d(PreprocConv2d):
         if reduction not in valid_reduction:
             raise ValueError(f"reduction must be one of {valid_reduction},"
                              f" but got reduction='{reduction}'")
-        if alpha is not None:
-            if alpha == int(alpha):
-                self.alpha = int(alpha)
-            else:
-                self.alpha = alpha
-        elif penalty == 'L2':
-            self.alpha = 10
-        else:
-            self.alpha = 0.01
+
+        if alpha == int(alpha):
+            alpha = int(alpha)
+        self.alpha = alpha
             
         self.penalty = penalty
         self.reduction = reduction
