@@ -74,55 +74,52 @@ class PreprocGHPConv2d(PreprocConv2d):
         kernel_size: int = 5,
         bias: bool = True,
         depthwise: bool = True,
-        alpha: float = 3,
+        alpha: Optional[float] = None,
         penalty: str = 'L2',
-        reduction: str = 'sum',
         norm_layer: Callable[..., Module] = nn.Identity,
         norm_layer_kwargs: dict = {},
         activ_layer: Callable[..., Module] = nn.Identity,
         activ_layer_kwargs: dict = {},
     ) -> None:
         """GHP Convolution for data preprocessing.
+        For ResNet, the optimal penalty and alpha is L1-norm and 0.01 (or L2-norm and 3.0). 
 
         Args:
             in_channels (int, optional): Number of input channels. Default to 1.
             out_channels (int, optional): Number of output channels. Default to 12.
             depthwise (bool, optional): If True, set the groups of the convolutional 
-                layer to in_channels. Defaults to True.
-            alpha (float, optional): Penalty factor for regularization loss. Default to 3.
+                layer to in_channels. Default to True.
+            alpha (float, optional): Penalty factor for regularization loss. Default to 3. 
             penalty (str, optional): Regularization technique used to calculate 
-                regularization loss. 'L1' or 'L2'. Defaults to 'L2'.
+                regularization loss. 'L1' or 'L2'. Default to 'L2'.
         """
         super(PreprocGHPConv2d, self).__init__(
             in_channels, out_channels, kernel_size, bias, depthwise, norm_layer, norm_layer_kwargs, activ_layer, activ_layer_kwargs)
+        
         valid_penalty = {'L1', 'L2'}
-        valid_reduction = {'sum', 'mean'}
         if penalty not in valid_penalty:
             raise ValueError(f"penalty must be one of {valid_penalty},"
                              f" but got penalty='{penalty}'")
-        if reduction not in valid_reduction:
-            raise ValueError(f"reduction must be one of {valid_reduction},"
-                             f" but got reduction='{reduction}'")
-
-        if alpha == int(alpha):
-            alpha = int(alpha)
-        self.alpha = alpha
+        
+        default_alpha = {
+            'L1': 0.01,
+            'L2': 3.0
+        }
+        if alpha is None:
+            alpha = default_alpha[penalty]
             
         self.penalty = penalty
-        self.reduction = reduction
-    
+        self.alpha = alpha
+            
     def calc_reg_loss(self) -> Tensor:
         reg_funcs = {
             'L1': torch.abs,
             'L2': torch.square
         }
-        gather_funcs = {
-            'sum': torch.sum,
-            'mean': torch.mean
-        }
         reg_func = reg_funcs[self.penalty]
-        gather_func = gather_funcs[self.reduction]
-        reg_loss = self.alpha * torch.sum(reg_func(gather_func(self.conv.weight, dim=[2, 3])))
+        reg_loss = self.alpha * torch.sum(
+            reg_func(
+                torch.sum(self.conv.weight, dim=[2, 3])))
         
         return reg_loss
     
